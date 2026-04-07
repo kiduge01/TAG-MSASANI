@@ -426,6 +426,12 @@ final class ApiController
             $joinDate = date('Y-m-d');
         }
 
+        // 2026-04-07 UPDATE: Enhanced member creation to include 14 new fields
+        // Added geographic (city_village, country), professional (education_level, job_title),
+        // service (church_services, is_doing_service_fully, service_level),
+        // finance (pays_tithes_faithfully, account_number, tithe_amount_monthly),
+        // and contact (emergency_contact_relationship, emergency_contact_email, alt_phone_2, physical_address_detailed) fields
+        // Supports expanded member management for comprehensive congregation tracking
         $stmt = $this->pdo->prepare(
             'INSERT INTO members (member_code, first_name, last_name, gender, phone, email,
                                   date_of_birth, join_date, marital_status, baptism_date,
@@ -486,6 +492,12 @@ final class ApiController
 
     public function updateMember(int $id, array $input): void
     {
+        // 2026-04-07 UPDATE: Expanded updateMember to support 14 new fields for comprehensive member management
+        // New fields include: geographic (city_village, country), professional (education_level, job_title),
+        // service (church_services, is_doing_service_fully, service_level),
+        // finance (pays_tithes_faithfully, account_number, tithe_amount_monthly),
+        // and contact (emergency_contact_relationship, emergency_contact_email, alt_phone_2, physical_address_detailed)
+        // See database/migrations/2026_04_07_001_add_member_details_fields.sql for schema changes
         $allowed = ['first_name','last_name','phone','email','gender','date_of_birth','join_date',
                     'member_status','physical_address','ward','district','region','marital_status',
                     'baptism_date','notes','alt_phone','city_village','country','education_level',
