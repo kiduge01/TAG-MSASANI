@@ -429,12 +429,18 @@ final class ApiController
         $stmt = $this->pdo->prepare(
             'INSERT INTO members (member_code, first_name, last_name, gender, phone, email,
                                   date_of_birth, join_date, marital_status, baptism_date,
-                                  physical_address, ward, district, region, notes,
-                                  member_status, created_by, updated_by)
+                                  physical_address, ward, district, region, city_village, country,
+                                  education_level, job_title, church_services, is_doing_service_fully,
+                                  service_level, pays_tithes_faithfully, account_number, tithe_amount_monthly,
+                                  emergency_contact_relationship, emergency_contact_email, alt_phone_2,
+                                  physical_address_detailed, notes, member_status, created_by, updated_by)
              VALUES (:member_code, :first_name, :last_name, :gender, :phone, :email,
                      :date_of_birth, :join_date, :marital_status, :baptism_date,
-                     :physical_address, :ward, :district, :region, :notes,
-                     :status, :created_by, :updated_by)'
+                     :physical_address, :ward, :district, :region, :city_village, :country,
+                     :education_level, :job_title, :church_services, :is_doing_service_fully,
+                     :service_level, :pays_tithes_faithfully, :account_number, :tithe_amount_monthly,
+                     :emergency_contact_relationship, :emergency_contact_email, :alt_phone_2,
+                     :physical_address_detailed, :notes, :status, :created_by, :updated_by)'
         );
         $n = fn(string $k): ?string => (isset($input[$k]) && $input[$k] !== '') ? trim((string) $input[$k]) : null;
         $stmt->execute([
@@ -452,6 +458,20 @@ final class ApiController
             ':ward'            => $n('ward'),
             ':district'        => $n('district'),
             ':region'          => $n('region'),
+            ':city_village'    => $n('city_village'),
+            ':country'         => $n('country') ?? 'Tanzania',
+            ':education_level' => $n('education_level'),
+            ':job_title'       => $n('job_title'),
+            ':church_services' => $n('church_services'),
+            ':is_doing_service_fully' => $n('is_doing_service_fully'),
+            ':service_level'   => $n('service_level'),
+            ':pays_tithes_faithfully' => $n('pays_tithes_faithfully'),
+            ':account_number'  => $n('account_number'),
+            ':tithe_amount_monthly' => $n('tithe_amount_monthly'),
+            ':emergency_contact_relationship' => $n('emergency_contact_relationship'),
+            ':emergency_contact_email' => $n('emergency_contact_email'),
+            ':alt_phone_2'     => $n('alt_phone_2'),
+            ':physical_address_detailed' => $n('physical_address_detailed'),
             ':notes'           => $n('notes'),
             ':status'          => in_array($input['member_status'] ?? '', ['active','inactive','transferred','deceased'], true) ? $input['member_status'] : 'active',
             ':created_by'      => $actorId,
@@ -468,7 +488,11 @@ final class ApiController
     {
         $allowed = ['first_name','last_name','phone','email','gender','date_of_birth','join_date',
                     'member_status','physical_address','ward','district','region','marital_status',
-                    'baptism_date','notes'];
+                    'baptism_date','notes','alt_phone','city_village','country','education_level',
+                    'job_title','church_services','is_doing_service_fully','service_level',
+                    'pays_tithes_faithfully','account_number','tithe_amount_monthly',
+                    'emergency_contact_name','emergency_contact_phone','emergency_contact_email',
+                    'emergency_contact_relationship','alt_phone_2','physical_address_detailed'];
         $set = [];
         $params = [':id' => $id];
         foreach ($allowed as $field) {

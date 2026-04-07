@@ -155,6 +155,15 @@
                 </div>
                 <!-- Row 7 -->
                 <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">City / Village (Mji/Kijiji)</label>
+                    <input name="city_village" placeholder="Ubungo, Kinondoni..." class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Country (Nchi)</label>
+                    <input name="country" placeholder="Tanzania" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm" value="Tanzania">
+                </div>
+                <!-- Row 8 -->
+                <div>
                     <label class="block text-xs font-semibold text-mist-600 mb-1">Region / Mkoa</label>
                     <input name="region" placeholder="Region" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
                 </div>
@@ -167,9 +176,89 @@
                         <option value="deceased">Deceased</option>
                     </select>
                 </div>
+                <!-- Row 9 - Education & Job -->
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Education Level (Kiwango cha Elimu)</label>
+                    <select name="education_level" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                        <option value="">Select</option>
+                        <option value="primary">Primary School</option>
+                        <option value="secondary">Secondary School</option>
+                        <option value="diploma">Diploma</option>
+                        <option value="bachelor">Bachelor's Degree</option>
+                        <option value="masters">Master's Degree</option>
+                        <option value="phd">PhD / Doctorate</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Job Title (Cheo Kazi)</label>
+                    <input name="job_title" placeholder="Position / Majukumu Kazini" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                </div>
+                <!-- Row 10 - Emergency Contact Details -->
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Emergency Contact Email (Baruapepe ya Dharura)</label>
+                    <input type="email" name="emergency_contact_email" placeholder="emergency@example.com" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Relationship (Uhusiano)</label>
+                    <select name="emergency_contact_relationship" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                        <option value="">Select</option>
+                        <option value="spouse">Spouse (Mke/Mume)</option>
+                        <option value="sibling">Sibling (Kaka/Dada)</option>
+                        <option value="parent">Parent (Mzazi)</option>
+                        <option value="child">Child (Mtoto)</option>
+                        <option value="friend">Friend (Rafiki)</option>
+                        <option value="relative">Relative (Jamaa)</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <!-- Row 11 - Tithe Information -->
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Account Number (Nambari Ya Bahasha)</label>
+                    <input name="account_number" placeholder="Bank account number" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Monthly Tithe Amount (Kiasi cha Zaka)</label>
+                    <input type="number" name="tithe_amount_monthly" placeholder="0.00" step="0.01" min="0" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                </div>
+                <!-- Row 12 - Service Information -->
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Pays Tithes Faithfully</label>
+                    <select name="pays_tithes_faithfully" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                        <option value="">Not specified</option>
+                        <option value="1">Yes (Ndiyo)</option>
+                        <option value="0">No (Hapana)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Doing Service Fully (Je Unafanya Huduma Yako)</label>
+                    <select name="is_doing_service_fully" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                        <option value="">Not specified</option>
+                        <option value="1">Yes (Ndiyo)</option>
+                        <option value="0">No (Hapana)</option>
+                    </select>
+                </div>
+                <!-- Row 13 - Church Service Details -->
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Service Level / Status (Daraja la Huduma)</label>
+                    <input name="service_level" placeholder="e.g., Leader, Active, Beginner" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Church Services (Huduma Kanisani)</label>
+                    <input name="church_services" placeholder="e.g., Choir, Ushering, Prayer Team" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                </div>
+                <!-- Notes & Other -->
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Alternative Phone 2</label>
+                    <input name="alt_phone_2" placeholder="Alternative phone" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Physical Address (Anuani)</label>
+                    <input name="physical_address_detailed" placeholder="Detailed street address" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+                </div>
                 <!-- Notes full width -->
                 <div class="md:col-span-2">
-                    <label class="block text-xs font-semibold text-mist-600 mb-1">Notes / Maelezo</label>
+                    <label class="block text-xs font-semibold text-mist-600 mb-1">Notes / Maelezo Mengine</label>
                     <textarea name="notes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm"></textarea>
                 </div>
                 <!-- Buttons -->
@@ -224,15 +313,27 @@
                         <span><strong>gender</strong> / Jinsia</span>
                         <span><strong>phone</strong> / Simu / Mobile</span>
                         <span><strong>email</strong> / Barua Pepe</span>
-                        <span><strong>date_of_birth</strong> / DOB</span>
-                        <span><strong>join_date</strong> / Joined</span>
+                        <span><strong>date_of_birth</strong> / DOB / Tarehe</span>
+                        <span><strong>join_date</strong> / Joined / Kujiunga</span>
                         <span><strong>member_status</strong> / Status / Hali</span>
                         <span><strong>member_code</strong> / Code / Nambari</span>
                         <span><strong>ward</strong> / Mtaa</span>
                         <span><strong>district</strong> / Wilaya</span>
                         <span><strong>region</strong> / Mkoa</span>
+                        <span><strong>city_village</strong> / Mji / Kijiji</span>
+                        <span><strong>country</strong> / Nchi</span>
                         <span><strong>marital_status</strong> / Hali ya Ndoa</span>
                         <span><strong>baptism_date</strong> / Tarehe ya Ubatizo</span>
+                        <span><strong>education_level</strong> / Elimu</span>
+                        <span><strong>job_title</strong> / Cheo Kazi</span>
+                        <span><strong>church_services</strong> / Huduma</span>
+                        <span><strong>service_level</strong> / Daraja la Huduma</span>
+                        <span><strong>pays_tithes_faithfully</strong> / Zaka</span>
+                        <span><strong>is_doing_service_fully</strong> / Huduma Kamili</span>
+                        <span><strong>account_number</strong> / Bahasha</span>
+                        <span><strong>tithe_amount_monthly</strong> / Kiasi Zaka</span>
+                        <span><strong>emergency_contact_relationship</strong> / Uhusiano</span>
+                        <span><strong>emergency_contact_email</strong> / Dharura Email</span>
                         <span><strong>notes</strong> / Maelezo</span>
                     </div>
                 </details>
