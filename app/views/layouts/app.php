@@ -86,15 +86,16 @@ $menu = [
 
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-72 bg-gradient-to-b from-royal-900 via-royal-800 to-dawn-900 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out flex flex-col shadow-2xl shadow-royal-900/40">
         <div class="flex items-center gap-3 px-5 py-6 border-b border-white/10">
-            <?php if (!empty($churchLogo)): ?>
-                <img src="<?= htmlspecialchars($baseUrl . $churchLogo) ?>" alt="<?= htmlspecialchars($churchName ?? '') ?>" class="w-11 h-11 rounded-2xl object-cover shadow-md">
-            <?php else: ?>
-            <div class="w-11 h-11 rounded-2xl bg-glory-500/90 text-royal-900 flex items-center justify-center shadow-md">
+            <!-- Logo image (always present for JS updates) -->
+            <img mh-logo src="<?= !empty($churchLogo) ? htmlspecialchars($baseUrl . $churchLogo) : '' ?>" alt="<?= htmlspecialchars($churchName ?? '') ?>" class="w-11 h-11 rounded-2xl object-cover shadow-md <?= empty($churchLogo) ? 'hidden' : '' ?>" style="<?= empty($churchLogo) ? 'display:none' : '' ?>">
+            
+            <!-- Fallback icon (show when no logo) -->
+            <div mh-logo-fallback class="w-11 h-11 rounded-2xl bg-glory-500/90 text-royal-900 flex items-center justify-center shadow-md <?= !empty($churchLogo) ? 'hidden' : '' ?>" style="<?= !empty($churchLogo) ? 'display:none' : '' ?>">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M8 7h8M9 13h6"/>
                 </svg>
             </div>
-            <?php endif; ?>
+            
             <div>
                 <h1 class="text-white font-heading font-semibold text-2xl leading-tight"><?= htmlspecialchars($churchName ?? 'Church CMS') ?></h1>
                 <p class="text-white/70 text-xs tracking-wide">Church Management System</p>

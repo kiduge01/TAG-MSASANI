@@ -5,6 +5,7 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS login_attempts;
 DROP TABLE IF EXISTS sms_logs;
 DROP TABLE IF EXISTS event_attendance;
 DROP TABLE IF EXISTS attendance_records;
@@ -537,6 +538,14 @@ CREATE TABLE audit_logs (
   INDEX idx_audit_module_action (module_name, action_name),
   INDEX idx_audit_entity (entity_type, entity_id),
   INDEX idx_audit_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE login_attempts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  identifier VARCHAR(255) NOT NULL COMMENT 'email or phone used for login',
+  attempted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_login_attempts_identifier (identifier),
+  INDEX idx_login_attempts_time (attempted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Baseline roles and finance categories.

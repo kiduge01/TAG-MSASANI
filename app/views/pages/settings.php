@@ -136,7 +136,7 @@
                         <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
                         <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Department Name</th>
                         <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Description</th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Head</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Head of Department</th>
                         <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
                         <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
                     </tr>
@@ -336,6 +336,12 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <input id="dept-desc" name="description" placeholder="Brief description..." class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Head of Department</label>
+                    <select id="dept-head" name="head_user_id" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
+                        <option value="">— Select Head —</option>
+                    </select>
+                </div>
                 <div id="dept-active-row" class="hidden">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" id="dept-active" class="w-4 h-4 rounded accent-royal-600" checked>
@@ -425,15 +431,33 @@ function esc(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── Load users for department head dropdown ──
+async function loadUsersForDeptHead() {
+    try {
+        const res = await fetch(SAPI + '/users');
+        const data = await res.json();
+        const users = data.data || [];
+        const headSelect = document.getElementById('dept-head');
+        const currentValue = headSelect.value;
+        headSelect.innerHTML = '<option value="">— Select Head —</option>' + 
+            users.map(u => `<option value="${u.id}">${esc(u.full_name)} (${esc(u.email || '')})</option>`).join('');
+        headSelect.value = currentValue;
+    } catch (e) {
+        console.error('Failed to load users:', e);
+    }
+}
+
 // ── Modal: Open/Close ──
 function openDeptModal(id = null, data = null) {
     document.getElementById('dept-modal-title').textContent = id ? 'Edit Department' : 'New Department';
     document.getElementById('dept-edit-id').value = id || '';
     document.getElementById('dept-name').value = data ? data.name : '';
     document.getElementById('dept-desc').value = data ? (data.description || '') : '';
+    document.getElementById('dept-head').value = data ? (data.head_user_id || '') : '';
     document.getElementById('dept-active-row').classList.toggle('hidden', !id);
     if (id) document.getElementById('dept-active').checked = parseInt(data.is_active) === 1;
     document.getElementById('dept-form-error').classList.add('hidden');
+    loadUsersForDeptHead();
     document.getElementById('dept-modal').classList.remove('hidden');
     setTimeout(() => document.getElementById('dept-name').focus(), 100);
 }
@@ -460,6 +484,7 @@ document.getElementById('dept-form').addEventListener('submit', async function(e
     const payload = {
         name: document.getElementById('dept-name').value.trim(),
         description: document.getElementById('dept-desc').value.trim(),
+        head_user_id: document.getElementById('dept-head').value || null,
     };
     if (id) {
         payload.is_active = document.getElementById('dept-active').checked ? 1 : 0;
@@ -560,6 +585,22 @@ async function uploadChurchLogo(input) {
         const res = await fetch(SAPI + '/settings/church-logo', { method: 'POST', body: formData });
         const data = await res.json();
         if (!data.success) throw new Error(data.message);
+        
+        // Update header logo immediately
+        if (data.data && data.data.logo_url) {
+            const headerLogoImg = document.querySelector('[mh-logo]');
+            const fallbackIcon = document.querySelector('[mh-logo-fallback]');
+            if (headerLogoImg) {
+                headerLogoImg.src = BASE_URL + data.data.logo_url;
+                headerLogoImg.classList.remove('hidden');
+                headerLogoImg.style.display = '';
+            }
+            if (fallbackIcon) {
+                fallbackIcon.classList.add('hidden');
+                fallbackIcon.style.display = 'none';
+            }
+        }
+        
         loadChurchProfile();
         const msgEl = document.getElementById('profile-msg');
         msgEl.textContent = 'Logo uploaded successfully!';
@@ -575,6 +616,20 @@ async function removeChurchLogo() {
         const res = await fetch(SAPI + '/settings/church-logo', { method: 'DELETE' });
         const data = await res.json();
         if (!data.success) throw new Error(data.message);
+        
+        // Hide header logo and show fallback icon
+        const headerLogoImg = document.querySelector('[mh-logo]');
+        const fallbackIcon = document.querySelector('[mh-logo-fallback]');
+        if (headerLogoImg) {
+            headerLogoImg.src = '';
+            headerLogoImg.classList.add('hidden');
+            headerLogoImg.style.display = 'none';
+        }
+        if (fallbackIcon) {
+            fallbackIcon.classList.remove('hidden');
+            fallbackIcon.style.display = '';
+        }
+        
         loadChurchProfile();
         const msgEl = document.getElementById('profile-msg');
         msgEl.textContent = 'Logo removed successfully';
