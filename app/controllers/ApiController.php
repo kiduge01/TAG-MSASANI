@@ -2721,10 +2721,9 @@ final class ApiController
             return;
         }
         $onlyActive = ($_GET['active'] ?? '') === '1';
-        $sql = "SELECT d.id, d.name, d.description, d.is_active,
-                       u.full_name AS head_name
+        $sql = "SELECT d.id, d.name, d.description, d.is_active, d.head_name,
+                       d.head_email
                 FROM departments d
-                LEFT JOIN users u ON u.id = d.head_user_id
                 " . ($onlyActive ? "WHERE d.is_active = 1" : "") . "
                 ORDER BY d.name ASC";
         $rows = $this->pdo->query($sql)->fetchAll();
@@ -2742,13 +2741,13 @@ final class ApiController
         if (!$user) { Response::json(['success' => false, 'message' => 'Not authenticated'], 401); return; }
 
         $stmt = $this->pdo->prepare(
-            'INSERT INTO departments (name, description, head_user_id, is_active)
-             VALUES (:name, :desc, :head, 1)'
+            'INSERT INTO departments (name, description, head_name, is_active)
+             VALUES (:name, :desc, :head_name, 1)'
         );
         $stmt->execute([
             ':name' => $name,
             ':desc' => trim((string) ($input['description'] ?? '')),
-            ':head' => isset($input['head_user_id']) && $input['head_user_id'] !== '' ? (int) $input['head_user_id'] : null,
+            ':head_name' => trim((string) ($input['head_name'] ?? '')) ?: null,
         ]);
         $id = (int) $this->pdo->lastInsertId();
         Audit::log($this->pdo, (int) $user['id'], 'settings', 'create_department', 'departments', $id, null, $input, 'Created department');
@@ -2764,7 +2763,7 @@ final class ApiController
         $params = [':id' => $id];
         if (isset($input['name'])        && trim($input['name']) !== '') { $fields[] = 'name = :name'; $params[':name'] = trim($input['name']); }
         if (array_key_exists('description', $input))                      { $fields[] = 'description = :desc'; $params[':desc'] = trim((string)$input['description']); }
-        if (array_key_exists('head_user_id', $input))                     { $fields[] = 'head_user_id = :head'; $params[':head'] = ($input['head_user_id'] !== '' && $input['head_user_id'] !== null) ? (int)$input['head_user_id'] : null; }
+        if (array_key_exists('head_name', $input))                        { $fields[] = 'head_name = :head_name'; $params[':head_name'] = trim((string)$input['head_name']) ?: null; }
         if (array_key_exists('is_active', $input))                        { $fields[] = 'is_active = :active'; $params[':active'] = (int)(bool)$input['is_active']; }
 
         if (empty($fields)) {
@@ -2786,6 +2785,73 @@ final class ApiController
         $stmt->execute([':id' => $id]);
         Audit::log($this->pdo, (int) $user['id'], 'settings', 'deactivate_department', 'departments', $id, null, [], 'Deactivated department');
         Response::json(['success' => true, 'message' => 'Department deactivated']);
+    }
+
+    public function setDepartmentCredentials(int $id, array $input): void
+    {
+        $user = Auth::user();
+        if (!$user) { Response::json(['success' => false, 'message' => 'Not authenticated'], 401); return; }
+
+        // Check if required columns exist (migrations must be run first)
+        if (!$this->columnExists('departments', 'head_email')) {
+            Response::json(['success' => false, 'message' => 'Database migration required. Please run: database/migrations/2026_04_09_001_modify_departments_for_separate_login.sql'], 400);
+            return;
+        }
+
+        $email = trim((string) ($input['head_email'] ?? ''));
+        $password = trim((string) ($input['head_password'] ?? ''));
+        $passwordConfirm = trim((string) ($input['head_password_confirm'] ?? ''));
+
+        // Validation - require both email and password
+        if (empty($email)) {
+            Response::json(['success' => false, 'message' => 'Email is required'], 422);
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Response::json(['success' => false, 'message' => 'Invalid email format'], 422);
+            return;
+        }
+
+        if (empty($password)) {
+            Response::json(['success' => false, 'message' => 'Password is required'], 422);
+            return;
+        }
+
+        if (strlen($password) < 6) {
+            Response::json(['success' => false, 'message' => 'Password must be at least 6 characters'], 422);
+            return;
+        }
+
+        if ($password !== $passwordConfirm) {
+            Response::json(['success' => false, 'message' => 'Passwords do not match'], 422);
+            return;
+        }
+
+        // Check email uniqueness (excluding current department)
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) as cnt FROM departments WHERE head_email = :email AND id != :id');
+        $stmt->execute([':email' => $email, ':id' => $id]);
+        $row = $stmt->fetch();
+        if ($row['cnt'] > 0) {
+            Response::json(['success' => false, 'message' => 'Email is already in use by another department'], 422);
+            return;
+        }
+
+        // Hash password
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+        // Update department with email and password
+        $stmt = $this->pdo->prepare('UPDATE departments SET head_email = :email, password = :password WHERE id = :id');
+        $stmt->execute([
+            ':email' => $email,
+            ':password' => $hashedPassword,
+            ':id' => $id,
+        ]);
+
+        Audit::log($this->pdo, (int) $user['id'], 'settings', 'set_department_credentials', 'departments', $id, null,
+            ['head_email' => $email], 'Set department head credentials');
+
+        Response::json(['success' => true, 'message' => 'Department credentials saved successfully']);
     }
 
     /* ───── Department Budgets ───── */

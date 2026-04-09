@@ -338,10 +338,32 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Head of Department</label>
-                    <select id="dept-head" name="head_user_id" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
-                        <option value="">— Select Head —</option>
-                    </select>
+                    <input id="dept-head" type="text" name="head_name" placeholder="e.g. John Philip" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
+                    <p class="text-xs text-gray-500 mt-1">Full name of the department head</p>
                 </div>
+                
+                <!-- Department Head Subsystem Credentials -->
+                <div class="border-t pt-3 mt-3">
+                    <p class="text-xs font-semibold text-gray-600 mb-3">📱 Department Head Login Credentials</p>
+                    <p class="text-xs text-gray-500 mb-3">Optional: Set email/password for separate department subsystem login at <code class="bg-gray-100 px-1 py-0.5 rounded">/department/auth/login.php</code></p>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Head Email</label>
+                        <input id="dept-head-email" type="email" placeholder="e.g., ibada@church.local" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
+                        <p id="dept-email-help" class="text-xs text-gray-500 mt-1">Leave empty to skip email setup</p>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Head Password</label>
+                        <input id="dept-head-password" type="password" placeholder="Min 6 characters" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Confirm Password</label>
+                        <input id="dept-head-password-confirm" type="password" placeholder="Repeat password" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
+                    </div>
+                </div>
+                
                 <div id="dept-active-row" class="hidden">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" id="dept-active" class="w-4 h-4 rounded accent-royal-600" checked>
@@ -432,20 +454,7 @@ function esc(str) {
 }
 
 // ── Load users for department head dropdown ──
-async function loadUsersForDeptHead() {
-    try {
-        const res = await fetch(SAPI + '/users');
-        const data = await res.json();
-        const users = data.data || [];
-        const headSelect = document.getElementById('dept-head');
-        const currentValue = headSelect.value;
-        headSelect.innerHTML = '<option value="">— Select Head —</option>' + 
-            users.map(u => `<option value="${u.id}">${esc(u.full_name)} (${esc(u.email || '')})</option>`).join('');
-        headSelect.value = currentValue;
-    } catch (e) {
-        console.error('Failed to load users:', e);
-    }
-}
+// (Removed - now using manual text input instead of dropdown)
 
 // ── Modal: Open/Close ──
 function openDeptModal(id = null, data = null) {
@@ -453,11 +462,22 @@ function openDeptModal(id = null, data = null) {
     document.getElementById('dept-edit-id').value = id || '';
     document.getElementById('dept-name').value = data ? data.name : '';
     document.getElementById('dept-desc').value = data ? (data.description || '') : '';
-    document.getElementById('dept-head').value = data ? (data.head_user_id || '') : '';
+    document.getElementById('dept-head').value = data ? (data.head_name || '') : '';
+    document.getElementById('dept-head-email').value = data && data.head_email ? data.head_email : '';
+    document.getElementById('dept-head-password').value = '';
+    document.getElementById('dept-head-password-confirm').value = '';
     document.getElementById('dept-active-row').classList.toggle('hidden', !id);
     if (id) document.getElementById('dept-active').checked = parseInt(data.is_active) === 1;
+    
+    // Update email help text based on edit/create mode
+    const emailHelp = document.getElementById('dept-email-help');
+    if (id) {
+        emailHelp.textContent = 'Leave empty to keep current email. Enter new email to update.';
+    } else {
+        emailHelp.textContent = 'Leave empty to skip email setup for now.';
+    }
+    
     document.getElementById('dept-form-error').classList.add('hidden');
-    loadUsersForDeptHead();
     document.getElementById('dept-modal').classList.remove('hidden');
     setTimeout(() => document.getElementById('dept-name').focus(), 100);
 }
@@ -484,19 +504,54 @@ document.getElementById('dept-form').addEventListener('submit', async function(e
     const payload = {
         name: document.getElementById('dept-name').value.trim(),
         description: document.getElementById('dept-desc').value.trim(),
-        head_user_id: document.getElementById('dept-head').value || null,
+        head_name: document.getElementById('dept-head').value.trim() || null,
     };
     if (id) {
         payload.is_active = document.getElementById('dept-active').checked ? 1 : 0;
     }
 
     try {
+        // Step 1: Save/Update Department
         const res = await fetch(
             id ? `${SAPI}/departments/${id}` : `${SAPI}/departments`,
             { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }
         );
         const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.message || 'Failed');
+        if (!res.ok || !data.success) throw new Error(data.message || 'Failed to save department');
+        
+        const deptId = id || data.data.id;
+        
+        // Step 2: Save credentials if provided (both email and password required together)
+        const email = document.getElementById('dept-head-email').value.trim();
+        const password = document.getElementById('dept-head-password').value.trim();
+        const passwordConfirm = document.getElementById('dept-head-password-confirm').value.trim();
+        
+        // Only process if at least one credential field is filled
+        if (email || password || passwordConfirm) {
+            // Validate credentials if any field is filled
+            if (!email) throw new Error('Email is required if setting a password');
+            if (!password) throw new Error('Password is required if setting an email');
+            if (password.length < 6) throw new Error('Password must be at least 6 characters');
+            if (password !== passwordConfirm) throw new Error('Passwords do not match');
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) throw new Error('Invalid email format');
+            
+            // Save credentials
+            const credsRes = await fetch(`${SAPI}/department-credentials/${deptId}`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    head_email: email,
+                    head_password: password,
+                    head_password_confirm: passwordConfirm
+                })
+            });
+            const credsData = await credsRes.json();
+            if (!credsRes.ok || !credsData.success) throw new Error(credsData.message || 'Failed to save credentials');
+        }
+        
         closeDeptModal();
         loadDepartments();
     } catch (err) {

@@ -235,6 +235,9 @@ if (str_starts_with($uri, '/api/v1/')) {
         $method === 'DELETE' && preg_match('#^/api/v1/departments/(\d+)$#', $uri, $m) === 1
             => $apiController->deleteDepartment((int) $m[1]),
 
+        $method === 'POST' && preg_match('#^/api/v1/department-credentials/(\d+)$#', $uri, $m) === 1
+            => $apiController->setDepartmentCredentials((int) $m[1], json_decode((string) file_get_contents('php://input'), true) ?: []),
+
         /* ── Procurement Module ── */
         $method === 'GET' && $uri === '/api/v1/procurement/requests'
             => $apiController->listPurchaseRequests(),

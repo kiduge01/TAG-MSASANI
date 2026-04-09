@@ -1,7 +1,20 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /Cmain/
     
-    # Redirect all requests to the public folder
-    RewriteCond %{REQUEST_URI} !^/public/
+    # Don't rewrite if it's a real file
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^(.*)$ - [L]
+    
+    # Don't rewrite if it's a real directory
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^(.*)$ - [L]
+    
+    # Don't rewrite if it's already in /public/ or /department/
+    RewriteCond %{REQUEST_URI} ^/Cmain/(public|department)/ [OR]
+    RewriteCond %{REQUEST_URI} ^/(public|department)/
+    RewriteRule ^(.*)$ - [L]
+    
+    # Redirect all other requests to the public folder
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
