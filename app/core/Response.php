@@ -8,6 +8,11 @@ final class Response
 {
     public static function json(array $payload, int $status = 200): void
     {
+        // Clear any buffered output (in case of warnings/notices)
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($payload, JSON_UNESCAPED_UNICODE);

@@ -238,7 +238,7 @@ $pageTitle = 'Edit Member';
 function logDepartmentAction($pdo, $departmentId, $action, $entityId, $summary, $oldValues = null, $newValues = null) {
     try {
         $stmt = $pdo->prepare('
-            INSERT INTO audit_logs (actor_id, module, action, entity, entity_id, old_values, new_values, summary, ip_address, user_agent)
+            INSERT INTO audit_logs (actor_user_id, module_name, action_name, entity_type, entity_id, old_values, new_values, change_summary, ip_address, user_agent)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([

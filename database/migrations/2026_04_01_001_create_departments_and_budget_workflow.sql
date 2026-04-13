@@ -44,7 +44,7 @@ ALTER TABLE department_budgets
 
 -- Foreign keys (safe with IF NOT EXISTS workaround via checking)
 -- Use IGNORE to skip if already exists
-ALTER TABLE department_budgets
+CREATE TABLE department_budgets
   ADD CONSTRAINT fk_dept_budget_closed_by FOREIGN KEY (closed_by) REFERENCES users(id)
     ON UPDATE CASCADE ON DELETE SET NULL;
 

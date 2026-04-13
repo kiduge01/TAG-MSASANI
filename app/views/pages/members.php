@@ -7,6 +7,21 @@
         <p class="text-mist-600 text-sm mt-0.5">Register, manage and import congregation members.</p>
     </div>
     <div class="flex flex-wrap gap-2">
+        <button id="btn-tab-members" class="px-4 py-2 rounded-xl bg-royal-600 text-white hover:bg-royal-700 text-sm font-semibold tab-btn" data-tab="members">👥 Members</button>
+        <button id="btn-tab-guests" class="px-4 py-2 rounded-xl bg-mist-100 text-mist-700 hover:bg-mist-200 text-sm font-semibold tab-btn" data-tab="guests">🧑 Guests</button>
+    </div>
+</div>
+
+<!-- Members Tab Section -->
+<div id="tab-content-members" class="tab-content">
+
+<!--  Page Header  -->
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div>
+        <h2 class="text-2xl font-heading font-semibold text-royal-900">Members List</h2>
+        <p class="text-mist-600 text-sm mt-0.5">Register, manage and import congregation members.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
         <button id="btn-export-csv" class="px-4 py-2 rounded-xl bg-mist-100 text-mist-700 hover:bg-mist-200 text-sm font-medium">&#11015; Export CSV</button>
         <button id="btn-open-import" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-sm font-semibold">&#8679; Import Excel / CSV</button>
         <button id="btn-open-add" class="px-4 py-2 rounded-xl bg-royal-600 text-white hover:bg-royal-700 text-sm font-semibold">+ Add Member</button>
@@ -14,11 +29,21 @@
 </div>
 
 <!--  Stats Bar  -->
-<div id="stats-bar" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-    <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-mist-500 uppercase tracking-wide">Total</p><p id="stat-total" class="text-2xl font-bold text-royal-800 mt-1">--</p></div>
-    <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-emerald-600 uppercase tracking-wide">Active</p><p id="stat-active" class="text-2xl font-bold text-emerald-700 mt-1">--</p></div>
-    <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-mist-500 uppercase tracking-wide">Inactive</p><p id="stat-inactive" class="text-2xl font-bold text-mist-600 mt-1">--</p></div>
-    <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-dawn-600 uppercase tracking-wide">Transferred</p><p id="stat-transferred" class="text-2xl font-bold text-dawn-700 mt-1">--</p></div>
+<div id="stats-bar" class="space-y-3 mb-6">
+    <!-- Status Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-mist-500 uppercase tracking-wide">Total</p><p id="stat-total" class="text-2xl font-bold text-royal-800 mt-1">--</p></div>
+        <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-emerald-600 uppercase tracking-wide">Active</p><p id="stat-active" class="text-2xl font-bold text-emerald-700 mt-1">--</p></div>
+        <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-mist-500 uppercase tracking-wide">Inactive</p><p id="stat-inactive" class="text-2xl font-bold text-mist-600 mt-1">--</p></div>
+        <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-dawn-600 uppercase tracking-wide">Transferred</p><p id="stat-transferred" class="text-2xl font-bold text-dawn-700 mt-1">--</p></div>
+    </div>
+    <!-- Demographics Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-blue-50 rounded-2xl border border-blue-200 p-4"><p class="text-xs text-blue-600 uppercase tracking-wide font-semibold">👨 Men</p><p id="stat-men" class="text-2xl font-bold text-blue-700 mt-1">--</p></div>
+        <div class="bg-pink-50 rounded-2xl border border-pink-200 p-4"><p class="text-xs text-pink-600 uppercase tracking-wide font-semibold">👩 Women</p><p id="stat-women" class="text-2xl font-bold text-pink-700 mt-1">--</p></div>
+        <div class="bg-yellow-50 rounded-2xl border border-yellow-200 p-4"><p class="text-xs text-yellow-600 uppercase tracking-wide font-semibold">👧 Children</p><p id="stat-children" class="text-2xl font-bold text-yellow-700 mt-1">--</p></div>
+        <div class="bg-orange-50 rounded-2xl border border-orange-200 p-4"><p class="text-xs text-orange-600 uppercase tracking-wide font-semibold">👴 Elders</p><p id="stat-elders" class="text-2xl font-bold text-orange-700 mt-1">--</p></div>
+    </div>
 </div>
 
 <!--  Filters  -->
@@ -74,6 +99,91 @@
         <p class="text-sm mt-1">Add members manually or import from Excel/CSV.</p>
     </div>
 </div>
+
+</div>
+<!-- End Members Tab -->
+
+<!-- Guests Tab Section -->
+<div id="tab-content-guests" class="tab-content hidden">
+
+<!--  Guests Header  -->
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div>
+        <h2 class="text-2xl font-heading font-semibold text-royal-900">Guest Registry</h2>
+        <p class="text-mist-600 text-sm mt-0.5">Track and manage all guest registrations.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <button id="btn-export-guests-csv" class="px-4 py-2 rounded-xl bg-mist-100 text-mist-700 hover:bg-mist-200 text-sm font-medium">&#11015; Export CSV</button>
+    </div>
+</div>
+
+<!--  Guests Stats Bar  -->
+<div id="guests-stats-bar" class="space-y-3 mb-6">
+    <!-- Status Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-mist-500 uppercase tracking-wide">Total</p><p id="stat-guests-total" class="text-2xl font-bold text-royal-800 mt-1">--</p></div>
+        <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-emerald-600 uppercase tracking-wide">Registered</p><p id="stat-guests-registered" class="text-2xl font-bold text-emerald-700 mt-1">--</p></div>
+        <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-blue-600 uppercase tracking-wide">Visited</p><p id="stat-guests-visited" class="text-2xl font-bold text-blue-700 mt-1">--</p></div>
+        <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-purple-600 uppercase tracking-wide">Converted</p><p id="stat-guests-converted" class="text-2xl font-bold text-purple-700 mt-1">--</p></div>
+        <div class="bg-white rounded-2xl border border-mist-200 p-4"><p class="text-xs text-dawn-600 uppercase tracking-wide">Inactive</p><p id="stat-guests-inactive" class="text-2xl font-bold text-dawn-700 mt-1">--</p></div>
+    </div>
+    <!-- Age Group Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-yellow-50 rounded-2xl border border-yellow-200 p-4"><p class="text-xs text-yellow-600 uppercase tracking-wide font-semibold">👧 Children</p><p id="stat-guests-children" class="text-2xl font-bold text-yellow-700 mt-1">--</p></div>
+        <div class="bg-cyan-50 rounded-2xl border border-cyan-200 p-4"><p class="text-xs text-cyan-600 uppercase tracking-wide font-semibold">🧑 Youth</p><p id="stat-guests-youth" class="text-2xl font-bold text-cyan-700 mt-1">--</p></div>
+        <div class="bg-emerald-50 rounded-2xl border border-emerald-200 p-4"><p class="text-xs text-emerald-600 uppercase tracking-wide font-semibold">👨 Adults</p><p id="stat-guests-adults" class="text-2xl font-bold text-emerald-700 mt-1">--</p></div>
+        <div class="bg-orange-50 rounded-2xl border border-orange-200 p-4"><p class="text-xs text-orange-600 uppercase tracking-wide font-semibold">👴 Elders</p><p id="stat-guests-elders" class="text-2xl font-bold text-orange-700 mt-1">--</p></div>
+    </div>
+</div>
+
+<!--  Guests Filters  -->
+<div class="bg-white rounded-2xl border border-mist-200 shadow-sm px-4 py-3 mb-4">
+    <div class="flex flex-wrap gap-2">
+        <input id="filter-guests-search" type="text" placeholder="Search code, name, phone, email" class="flex-1 min-w-48 rounded-xl border border-mist-200 px-3 py-2 text-sm">
+        <select id="filter-guests-status" class="rounded-xl border border-mist-200 px-3 py-2 text-sm">
+            <option value="">All Status</option>
+            <option value="registered">Registered</option>
+            <option value="visited">Visited</option>
+            <option value="converted">Converted</option>
+            <option value="inactive">Inactive</option>
+        </select>
+        <button id="btn-clear-guest-filters" class="px-3 py-2 rounded-xl bg-mist-100 text-mist-600 hover:bg-mist-200 text-sm">Clear</button>
+    </div>
+</div>
+
+<!--  Guests Table  -->
+<div class="bg-white rounded-2xl border border-mist-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-3.5 border-b border-mist-100 flex flex-wrap items-center justify-between gap-2">
+        <h3 class="font-semibold text-royal-800">Guest List</h3>
+        <span id="guests-count" class="text-xs text-mist-500"></span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-mist-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-500">Code</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-500">Full Name</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-500">Phone</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-500">Email</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-500">Service Date</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-500">Visit Type</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-500">Location</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-500">Status</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+            </thead>
+            <tbody id="guests-tbody" class="divide-y divide-mist-100"></tbody>
+        </table>
+    </div>
+    <div id="guests-empty" class="hidden px-5 py-14 text-center text-mist-400">
+        <p class="text-4xl mb-2">🧑</p>
+        <p class="font-semibold text-mist-600">No guests found</p>
+        <p class="text-sm mt-1">Guest registrations will appear here.</p>
+    </div>
+</div>
+
+</div>
+<!-- End Guests Tab -->
 
 <!-- 
      ADD / EDIT MEMBER MODAL
@@ -352,11 +462,59 @@
     </div>
 </div>
 
+<!-- 
+     GUEST DETAILS MODAL
+ -->
+<div id="guest-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-start justify-center min-h-screen pt-10 pb-10 px-4">
+        <div class="fixed inset-0 bg-black/40" id="guest-modal-bg"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl z-10">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-mist-100">
+                <h3 class="text-lg font-heading font-semibold text-royal-900">Guest Details</h3>
+                <button id="btn-close-guest-modal" class="p-1.5 rounded-lg hover:bg-mist-100 text-mist-500">&#10005;</button>
+            </div>
+            <div id="guest-details-content" class="px-6 py-5 max-h-96 overflow-y-auto">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 const MB = '<?= $B ?>';
 let allMembers = [];
+let allGuests = [];
 
-/*  Stats  */
+/* ━━━━━━━━━━━━━━ TAB SWITCHING ━━━━━━━━━━━━━━ */
+function switchTab(tabName) {
+    const tabs = document.querySelectorAll('.tab-content');
+    const btns = document.querySelectorAll('.tab-btn');
+    
+    tabs.forEach(t => t.classList.add('hidden'));
+    btns.forEach(b => b.classList.add('bg-mist-100', 'text-mist-700', 'hover:bg-mist-200'));
+    btns.forEach(b => b.classList.remove('bg-royal-600', 'text-white', 'hover:bg-royal-700'));
+    
+    const activeTab = document.getElementById('tab-content-' + tabName);
+    const activeBtn = document.getElementById('btn-tab-' + tabName);
+    
+    if (activeTab) activeTab.classList.remove('hidden');
+    if (activeBtn) {
+        activeBtn.classList.remove('bg-mist-100', 'text-mist-700', 'hover:bg-mist-200');
+        activeBtn.classList.add('bg-royal-600', 'text-white', 'hover:bg-royal-700');
+    }
+    
+    if (tabName === 'guests') {
+        loadGuestsData();
+    }
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        switchTab(btn.dataset.tab);
+    });
+});
+
+/* ━━━━━━━━━━━━━━ MEMBERS SECTION ━━━━━━━━━━━━━━ */
 async function loadStats() {
     try {
         const res  = await fetch(MB + '/api/v1/members/stats');
@@ -367,6 +525,43 @@ async function loadStats() {
         document.getElementById('stat-inactive').textContent    = s.inactive    ?? '0';
         document.getElementById('stat-transferred').textContent = s.transferred ?? '0';
     } catch(_) {}
+}
+
+function calculateMembersDemographics() {
+    if (!allMembers.length) {
+        document.getElementById('stat-men').textContent = '0';
+        document.getElementById('stat-women').textContent = '0';
+        document.getElementById('stat-children').textContent = '0';
+        document.getElementById('stat-elders').textContent = '0';
+        return;
+    }
+
+    let men = 0, women = 0, children = 0, elders = 0;
+    
+    allMembers.forEach(m => {
+        // Count by gender
+        if (m.gender === 'male') men++;
+        else if (m.gender === 'female') women++;
+        
+        // Count by age (requires date_of_birth)
+        if (m.date_of_birth) {
+            const birthDate = new Date(m.date_of_birth);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            
+            if (age < 18) children++;
+            else if (age >= 60) elders++;
+        }
+    });
+    
+    document.getElementById('stat-men').textContent = men;
+    document.getElementById('stat-women').textContent = women;
+    document.getElementById('stat-children').textContent = children;
+    document.getElementById('stat-elders').textContent = elders;
 }
 
 /*  Load Members  */
@@ -385,6 +580,7 @@ async function loadMembers() {
         allMembers = data.data || [];
         renderMembers(allMembers);
         rebuildRegionFilter();
+        calculateMembersDemographics();
     } catch(e) {
         console.error('Failed to load members', e);
     }
@@ -627,4 +823,214 @@ document.getElementById('btn-do-import').addEventListener('click', async () => {
 
 /*  Bootstrap  */
 Promise.all([loadStats(), loadMembers()]);
+
+/* ━━━━━━━━━━━━━━ GUESTS SECTION ━━━━━━━━━━━━━━ */
+
+async function loadGuestsData() {
+    const search = document.getElementById('filter-guests-search').value.trim();
+    const status = document.getElementById('filter-guests-status').value;
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (status) params.set('status', status);
+    
+    try {
+        const res = await fetch(MB + '/api/v1/attendance/guests?' + params.toString());
+        const data = await res.json();
+        allGuests = data.data || [];
+        renderGuests(allGuests);
+        updateGuestsStats();
+    } catch(e) {
+        console.error('Failed to load guests', e);
+    }
+}
+
+function updateGuestsStats() {
+    const stats = {
+        total: allGuests.length,
+        registered: allGuests.filter(g => g.status === 'registered').length,
+        visited: allGuests.filter(g => g.status === 'visited').length,
+        converted: allGuests.filter(g => g.status === 'converted').length,
+        inactive: allGuests.filter(g => g.status === 'inactive').length,
+        children: allGuests.filter(g => g.age_group === 'child').length,
+        youth: allGuests.filter(g => g.age_group === 'teen' || g.age_group === 'youth').length,
+        adults: allGuests.filter(g => g.age_group === 'adult').length,
+        elders: allGuests.filter(g => g.age_group === 'senior').length,
+    };
+    
+    document.getElementById('stat-guests-total').textContent = stats.total;
+    document.getElementById('stat-guests-registered').textContent = stats.registered;
+    document.getElementById('stat-guests-visited').textContent = stats.visited;
+    document.getElementById('stat-guests-converted').textContent = stats.converted;
+    document.getElementById('stat-guests-inactive').textContent = stats.inactive;
+    document.getElementById('stat-guests-children').textContent = stats.children;
+    document.getElementById('stat-guests-youth').textContent = stats.youth;
+    document.getElementById('stat-guests-adults').textContent = stats.adults;
+    document.getElementById('stat-guests-elders').textContent = stats.elders;
+}
+
+function getGuestStatusClass(status) {
+    const classes = {
+        'registered': 'bg-emerald-100 text-emerald-700',
+        'visited': 'bg-blue-100 text-blue-700',
+        'converted': 'bg-purple-100 text-purple-700',
+        'inactive': 'bg-dawn-100 text-dawn-700'
+    };
+    return classes[status] || 'bg-mist-100 text-mist-600';
+}
+
+function getVisitTypeLabel(visitType) {
+    const labels = {
+        'first_time': '1st Time',
+        'returning': 'Returning',
+        'referred': 'Referred'
+    };
+    return labels[visitType] || visitType;
+}
+
+function renderGuests(list) {
+    const tbody = document.getElementById('guests-tbody');
+    const empty = document.getElementById('guests-empty');
+    document.getElementById('guests-count').textContent = list.length + ' record' + (list.length !== 1 ? 's' : '');
+    
+    if (!list.length) {
+        tbody.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+    
+    empty.classList.add('hidden');
+    tbody.innerHTML = list.map(r => `
+        <tr class="hover:bg-mist-50/60">
+            <td class="px-4 py-3 text-xs font-mono text-mist-600 font-semibold">${r.guest_code || '-'}</td>
+            <td class="px-4 py-3 font-semibold text-royal-800">${r.first_name} ${r.last_name}</td>
+            <td class="px-4 py-3 text-mist-700 text-sm">${r.phone || '-'}</td>
+            <td class="px-4 py-3 text-mist-600 text-xs">${r.email || '-'}</td>
+            <td class="px-4 py-3 text-mist-600 text-xs">${r.service_date ? r.service_date.substring(0,10) : '-'}</td>
+            <td class="px-4 py-3 text-mist-600 text-xs"><span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-mist-100">${getVisitTypeLabel(r.visit_type)}</span></td>
+            <td class="px-4 py-3 text-mist-600 text-xs">${r.location || '-'}</td>
+            <td class="px-4 py-3"><span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${getGuestStatusClass(r.status)}">${r.status}</span></td>
+            <td class="px-4 py-3 text-right">
+                <button class="text-xs text-mist-500 hover:text-royal-700 font-semibold view-guest-btn" data-id="${r.id}" title="View details">👁</button>
+            </td>
+        </tr>
+    `).join('');
+    
+    document.querySelectorAll('.view-guest-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            showGuestDetails(Number(btn.dataset.id));
+        });
+    });
+}
+
+function showGuestDetails(guestId) {
+    const guest = allGuests.find(g => g.id === guestId);
+    if (!guest) return;
+    
+    const detailsHTML = `
+        <div class="space-y-3 text-sm">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <p class="text-xs text-mist-500 font-semibold">Guest Code</p>
+                    <p class="font-mono text-royal-700 font-semibold">${guest.guest_code}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-mist-500 font-semibold">Status</p>
+                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${getGuestStatusClass(guest.status)}">${guest.status}</span>
+                </div>
+                <div>
+                    <p class="text-xs text-mist-500 font-semibold">Service Date</p>
+                    <p>${guest.service_date ? guest.service_date.substring(0,10) : '-'}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-mist-500 font-semibold">Visit Type</p>
+                    <p>${getVisitTypeLabel(guest.visit_type)}</p>
+                </div>
+            </div>
+            <div class="pt-2 border-t border-mist-200 space-y-2">
+                <div>
+                    <p class="text-xs text-mist-500 font-semibold">Full Name</p>
+                    <p>${guest.first_name} ${guest.last_name}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <p class="text-xs text-mist-500 font-semibold">Phone</p>
+                        <p class="font-mono">${guest.phone || '-'}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-mist-500 font-semibold">Email</p>
+                        <p class="text-xs">${guest.email || '-'}</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <p class="text-xs text-mist-500 font-semibold">Location</p>
+                        <p>${guest.location || '-'}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-mist-500 font-semibold">Age Group</p>
+                        <p>${guest.age_group ? guest.age_group.charAt(0).toUpperCase() + guest.age_group.slice(1) : '-'}</p>
+                    </div>
+                </div>
+                ${guest.invited_by_name ? `
+                <div>
+                    <p class="text-xs text-mist-500 font-semibold">Invited By</p>
+                    <p>${guest.invited_by_name}</p>
+                </div>
+                ` : ''}
+                ${guest.follow_up_date ? `
+                <div>
+                    <p class="text-xs text-mist-500 font-semibold">Follow-up Date</p>
+                    <p>${guest.follow_up_date.substring(0,10)}</p>
+                </div>
+                ` : ''}
+                ${guest.notes ? `
+                <div>
+                    <p class="text-xs text-mist-500 font-semibold">Notes</p>
+                    <p class="text-xs bg-mist-50 p-2 rounded border border-mist-200">${guest.notes}</p>
+                </div>
+                ` : ''}
+                <div class="pt-2 text-xs text-mist-400">
+                    Registered: ${new Date(guest.created_at).toLocaleDateString()}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('guest-details-content').innerHTML = detailsHTML;
+    document.getElementById('guest-modal').classList.remove('hidden');
+}
+
+function closeGuestModal() {
+    document.getElementById('guest-modal').classList.add('hidden');
+}
+
+document.getElementById('btn-close-guest-modal').addEventListener('click', closeGuestModal);
+document.getElementById('guest-modal-bg').addEventListener('click', closeGuestModal);
+
+/* Guest Filters */
+document.getElementById('filter-guests-search').addEventListener('input', () => {
+    if (allGuests.length > 0) loadGuestsData();
+});
+
+document.getElementById('filter-guests-status').addEventListener('change', () => {
+    if (allGuests.length > 0) loadGuestsData();
+});
+
+document.getElementById('btn-clear-guest-filters').addEventListener('click', () => {
+    document.getElementById('filter-guests-search').value = '';
+    document.getElementById('filter-guests-status').value = '';
+    loadGuestsData();
+});
+
+/* Export Guests CSV */
+document.getElementById('btn-export-guests-csv').addEventListener('click', () => {
+    if (!allGuests.length) { alert('No guests to export.'); return; }
+    const cols = ['guest_code','first_name','last_name','phone','email','location','service_date','visit_type','status','age_group','notes'];
+    const header = cols.join(',');
+    const rows = allGuests.map(r => cols.map(c => JSON.stringify(r[c] ?? '')).join(','));
+    const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'guests_export_' + new Date().toISOString().split('T')[0] + '.csv' });
+    a.click();
+});
 </script>

@@ -516,7 +516,19 @@ document.getElementById('dept-form').addEventListener('submit', async function(e
             id ? `${SAPI}/departments/${id}` : `${SAPI}/departments`,
             { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }
         );
-        const data = await res.json();
+        
+        // Read response as text first (can only read body once)
+        const responseText = await res.text();
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (jsonErr) {
+            console.error('Department API returned invalid JSON.');
+            console.error('HTTP Status:', res.status);
+            console.error('Response:', responseText.substring(0, 300));
+            throw new Error(`Server returned invalid JSON (HTTP ${res.status})`);
+        }
+        
         if (!res.ok || !data.success) throw new Error(data.message || 'Failed to save department');
         
         const deptId = id || data.data.id;
@@ -548,14 +560,27 @@ document.getElementById('dept-form').addEventListener('submit', async function(e
                     head_password_confirm: passwordConfirm
                 })
             });
-            const credsData = await credsRes.json();
+            
+            // Read credentials response text first
+            const credsText = await credsRes.text();
+            let credsData;
+            try {
+                credsData = JSON.parse(credsText);
+            } catch (jsonErr) {
+                console.error('Credentials API returned invalid JSON.');
+                console.error('HTTP Status:', credsRes.status);
+                console.error('Response:', credsText.substring(0, 300));
+                throw new Error(`Failed to save credentials (HTTP ${credsRes.status})`);
+            }
+            
             if (!credsRes.ok || !credsData.success) throw new Error(credsData.message || 'Failed to save credentials');
         }
         
         closeDeptModal();
         loadDepartments();
     } catch (err) {
-        errEl.textContent = err.message;
+        console.error('Department save error:', err.message);
+        errEl.textContent = err.message || 'An unexpected error occurred';
         errEl.classList.remove('hidden');
     } finally {
         btn.disabled = false;
@@ -590,7 +615,26 @@ async function reactivateDept(id) {
 async function loadChurchProfile() {
     try {
         const res = await fetch(SAPI + '/settings/church-profile');
-        const data = await res.json();
+        
+        // Read response as text first (can only read body once)
+        const responseText = await res.text();
+        
+        // Try to parse as JSON
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (jsonErr) {
+            // If JSON parsing fails, log the response for debugging
+            console.error('Church profile API returned invalid JSON.');
+            console.error('HTTP Status:', res.status);
+            console.error('Response:', responseText.substring(0, 300));
+            throw new Error(`API returned invalid JSON (HTTP ${res.status})`);
+        }
+        
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || 'Failed to load church profile');
+        }
+        
         const p = data.data || {};
         const fields = ['church_name','location','phone','email','address','pastor_name','founded_year'];
         fields.forEach(f => {
@@ -611,7 +655,9 @@ async function loadChurchProfile() {
             preview.classList.remove('border-solid','border-royal-200');
             removeBtn.classList.add('hidden');
         }
-    } catch (e) { console.error('Failed to load church profile:', e); }
+    } catch (e) { 
+        console.error('Failed to load church profile:', e.message);
+    }
 }
 
 // Drag-and-drop handler for logo

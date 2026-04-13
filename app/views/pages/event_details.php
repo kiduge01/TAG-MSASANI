@@ -48,31 +48,19 @@ function statusBadge(status) {
 function renderHeader() {
     const ov = detailsData.overview;
     const dt = new Date(ov.start_datetime).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' });
-    const appt = isAppt(ov.notes);
-    const apptWith = extractApptWith(ov.notes);
-    const subtitleExtra = (appt && apptWith) ? ` &mdash; with <strong>${apptWith}</strong>` : '';
-    const apptBadge = appt ? `<span class="ml-2 inline-flex items-center gap-1 bg-rose-100 text-rose-700 rounded-full px-2.5 py-0.5 text-xs font-semibold align-middle">&#128197; Appointment</span>` : '';
     document.getElementById('event-header').innerHTML = `
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="text-xs uppercase tracking-widest text-mist-500">${ov.event_code}</p>
-                <h2 class="text-2xl font-heading font-semibold text-royal-800">${ov.title}${apptBadge}</h2>
-                <p class="text-sm text-mist-600 mt-1">${dt} | ${ov.venue || 'Venue pending'}${subtitleExtra}</p>
+                <h2 class="text-2xl font-heading font-semibold text-royal-800">${ov.title}</h2>
+                <p class="text-sm text-mist-600 mt-1">${dt} | ${ov.location || 'Location pending'}</p>
             </div>
             <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusBadge(ov.status)}">${ov.status}</span>
         </div>
     `;
 }
 
-function isAppt(notes) {
-    return notes && String(notes).toLowerCase().includes('[event_subtype:appointment]');
-}
 
-function extractApptWith(notes) {
-    if (!notes) return '';
-    const m = String(notes).match(/\[appointment_with:([^\]]+)\]/i);
-    return m ? m[1].trim() : '';
-}
 
 function categoryLabel(category) {
     const map = { conference: 'Worship Service', seminar: 'Seminar', outreach: 'Outreach', fundraiser: 'Fundraiser', youth: 'Youth', choir: 'Choir', other: 'Meeting' };
@@ -81,26 +69,19 @@ function categoryLabel(category) {
 
 function renderOverview() {
     const ov = detailsData.overview;
-    const appt = isAppt(ov.notes);
-    const apptWith = extractApptWith(ov.notes);
-
-    const typeHtml = appt
-        ? `<span class="inline-flex items-center gap-1.5 bg-rose-100 text-rose-700 rounded-full px-2.5 py-0.5 text-xs font-semibold">&#128197; Appointment</span>${apptWith ? `<span class="text-mist-500 ml-2">with <strong class="text-mist-800">${apptWith}</strong></span>` : ''}`
-        : categoryLabel(ov.category);
 
     return `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="rounded-xl border border-mist-200 p-4">
-                <p class="text-xs uppercase text-mist-500 tracking-wider">Description</p>
+                <p class="text-xs uppercase text-mist-500 tracking-wider">Description / Agenda</p>
                 <p class="text-sm text-mist-700 mt-2">${ov.description || 'No description provided.'}</p>
             </div>
             <div class="rounded-xl border border-mist-200 p-4">
-                <p class="text-xs uppercase text-mist-500 tracking-wider">Event Basics</p>
+                <p class="text-xs uppercase text-mist-500 tracking-wider">Event Details</p>
                 <div class="mt-2 space-y-1.5 text-sm text-mist-700">
-                    <p class="flex items-center gap-2"><strong>Type:</strong> ${typeHtml}</p>
-                    <p><strong>Organizer:</strong> ${ov.organizer_name || 'N/A'}</p>
-                    <p><strong>Group:</strong> ${ov.target_group || 'N/A'}</p>
-                    ${!appt ? `<p><strong>Expected Attendance:</strong> ${ov.expected_attendance || 0}</p>` : ''}
+                    <p><strong>Type:</strong> ${categoryLabel(ov.event_type)}</p>
+                    <p><strong>Pastor on Duty:</strong> ${ov.pastor_on_duty || 'N/A'}</p>
+                    <p><strong>Usher on Duty:</strong> ${ov.usher_on_duty || 'N/A'}</p>
                 </div>
             </div>
         </div>

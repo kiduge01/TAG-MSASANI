@@ -836,13 +836,10 @@ final class ApiController
             $budgetJoin = '';
         }
 
-        $sql = "SELECT e.id, e.event_code, e.title, e.description, e.category, e.start_datetime, e.end_datetime,
-                       e.venue, e.expected_attendance, e.status, e.budget_total, e.notes,
-                       {$budgetSelect},
-                       g.name AS target_group, u.full_name AS organizer_name
+        $sql = "SELECT e.id, e.event_code, e.title, e.description, e.event_type, e.start_datetime, e.end_datetime,
+                       e.location, e.pastor_on_duty, e.usher_on_duty, e.status, e.budget_total,
+                       {$budgetSelect}
                 FROM `events` e
-                LEFT JOIN `groups` g ON g.id = e.target_group_id
-                LEFT JOIN users u ON u.id = e.organizer_user_id
                 {$budgetJoin}
                 WHERE 1=1";
 
@@ -854,13 +851,8 @@ final class ApiController
         }
 
         if ($type !== '') {
-            $sql .= ' AND e.category = :category';
-            $params[':category'] = $type;
-        }
-
-        if ($group !== '' && ctype_digit($group)) {
-            $sql .= ' AND e.target_group_id = :group_id';
-            $params[':group_id'] = (int) $group;
+            $sql .= ' AND e.event_type = :event_type';
+            $params[':event_type'] = $type;
         }
 
         $sql .= ' ORDER BY e.start_datetime ASC LIMIT 400';
@@ -883,11 +875,9 @@ final class ApiController
         $monthEnd = date('Y-m-t 23:59:59', strtotime($monthStart));
 
         $stmt = $this->pdo->prepare(
-            'SELECT e.id, e.event_code, e.title, e.category, e.start_datetime, e.end_datetime, e.status,
-                e.target_group_id, e.notes,
-                    e.venue, e.expected_attendance, e.budget_total, g.name AS target_group
+            'SELECT e.id, e.event_code, e.title, e.event_type, e.start_datetime, e.end_datetime, e.status,
+                e.location, e.pastor_on_duty, e.usher_on_duty, e.budget_total
              FROM `events` e
-             LEFT JOIN `groups` g ON g.id = e.target_group_id
              WHERE e.start_datetime BETWEEN :start_at AND :end_at
              ORDER BY e.start_datetime ASC'
         );
@@ -921,7 +911,7 @@ final class ApiController
 
     public function createEvent(array $input): void
     {
-        $required = ['title', 'event_type', 'date', 'time'];
+        $required = ['title', 'event_type', 'date', 'time', 'location'];
         foreach ($required as $field) {
             if (empty($input[$field])) {
                 Response::json(['success' => false, 'message' => $field . ' is required'], 422);
@@ -944,59 +934,39 @@ final class ApiController
             Response::json(['success' => false, 'message' => 'Invalid date/time value'], 422);
         }
 
-        $durationHours = isset($input['duration_hours']) ? (float) $input['duration_hours'] : 2.0;
-        if ($durationHours <= 0 || $durationHours > 24) {
-            $durationHours = 2.0;
-        }
+        $durationHours = 2.0;
         $endDatetime = date('Y-m-d H:i:s', strtotime($startDatetime . ' +' . $durationHours . ' hour'));
 
         $codeStmt = $this->pdo->query("SELECT CONCAT('EVT-', DATE_FORMAT(NOW(), '%Y'), '-', LPAD(COALESCE(MAX(id), 0) + 1, 3, '0')) FROM `events`");
         $eventCode = (string) $codeStmt->fetchColumn();
 
-        $organizerUserId = isset($input['organizer_user_id']) && $input['organizer_user_id'] !== '' ? (int) $input['organizer_user_id'] : null;
-        $targetGroupId = isset($input['target_group_id']) && $input['target_group_id'] !== '' ? (int) $input['target_group_id'] : null;
-        $expectedAttendance = isset($input['expected_attendance']) && $input['expected_attendance'] !== '' ? (int) $input['expected_attendance'] : null;
         $budget = isset($input['budget']) && $input['budget'] !== '' ? (float) $input['budget'] : 0.0;
         $sendSms = !empty($input['send_sms']);
         $sendEmail = !empty($input['send_email']);
 
-        $notes = trim((string) ($input['description'] ?? ''));
-        if ($eventType === 'appointment') {
-            $notes .= ($notes !== '' ? "\n" : '') . '[event_subtype:appointment]';
-        }
-        if ($eventType === 'appointment' && !empty($input['appointment_with'])) {
-            $apptWith = trim((string) $input['appointment_with']);
-            if ($apptWith !== '') {
-                $notes .= ($notes !== '' ? "\n" : '') . '[appointment_with:' . $apptWith . ']';
-            }
-        }
-        if ($sendSms || $sendEmail) {
-            $notes .= "\n\nNotification preferences: "
-                . ($sendEmail ? 'email=on' : 'email=off')
-                . ', '
-                . ($sendSms ? 'sms=on' : 'sms=off');
-        }
+        $pastorOnDuty = trim((string) ($input['pastor_on_duty'] ?? '')) ?: null;
+        $usherOnDuty = trim((string) ($input['usher_on_duty'] ?? '')) ?: null;
+        $location = trim((string) ($input['location'] ?? '')) ?: null;
+        $description = trim((string) ($input['description'] ?? '')) ?: null;
 
         $stmt = $this->pdo->prepare(
-            'INSERT INTO `events` (event_code, title, description, category, start_datetime, end_datetime, venue,
-                                   organizer_user_id, target_group_id, expected_attendance, status, budget_total, notes)
-             VALUES (:event_code, :title, :description, :category, :start_datetime, :end_datetime, :venue,
-                     :organizer_user_id, :target_group_id, :expected_attendance, :status, :budget_total, :notes)'
+            'INSERT INTO `events` (event_code, title, description, event_type, start_datetime, end_datetime, 
+                                   location, pastor_on_duty, usher_on_duty, status, budget_total)
+             VALUES (:event_code, :title, :description, :event_type, :start_datetime, :end_datetime, 
+                     :location, :pastor_on_duty, :usher_on_duty, :status, :budget_total)'
         );
         $stmt->execute([
             ':event_code' => $eventCode,
             ':title' => trim((string) $input['title']),
-            ':description' => trim((string) ($input['description'] ?? '')),
-            ':category' => $category,
+            ':description' => $description,
+            ':event_type' => $eventType,
             ':start_datetime' => $startDatetime,
             ':end_datetime' => $endDatetime,
-            ':venue' => trim((string) ($input['location'] ?? '')),
-            ':organizer_user_id' => $organizerUserId,
-            ':target_group_id' => $targetGroupId,
-            ':expected_attendance' => $expectedAttendance,
+            ':location' => $location,
+            ':pastor_on_duty' => $pastorOnDuty,
+            ':usher_on_duty' => $usherOnDuty,
             ':status' => 'planned',
             ':budget_total' => $budget,
-            ':notes' => $notes !== '' ? $notes : null,
         ]);
 
         $eventId = (int) $this->pdo->lastInsertId();
@@ -1011,33 +981,14 @@ final class ApiController
             $budgetStmt->execute([
                 ':event_id' => $eventId,
                 ':item_type' => 'expense',
-                ':item_name' => 'Planned Event Budget',
+                ':item_name' => 'Event Budget',
                 ':planned_amount' => $budget,
                 ':actual_amount' => 0,
-                ':notes' => 'Auto-created from quick event form',
+                ':notes' => 'Budget for ' . trim((string) $input['title']),
             ]);
         }
 
-        if ($sendSms && $actorId !== null) {
-            $smsStmt = $this->pdo->prepare(
-                'INSERT INTO sms_logs (recipient_type, group_id, phone, message_text, message_type, provider, delivery_status, event_id, sent_by, sent_at)
-                 VALUES (:recipient_type, :group_id, :phone, :message_text, :message_type, :provider, :delivery_status, :event_id, :sent_by, :sent_at)'
-            );
-            $smsStmt->execute([
-                ':recipient_type' => $targetGroupId !== null ? 'group' : 'custom',
-                ':group_id' => $targetGroupId,
-                ':phone' => 'N/A',
-                ':message_text' => 'Event reminder: ' . trim((string) $input['title']) . ' on ' . date('d M Y H:i', strtotime($startDatetime)),
-                ':message_type' => 'event_reminder',
-                ':provider' => 'internal',
-                ':delivery_status' => 'queued',
-                ':event_id' => $eventId,
-                ':sent_by' => $actorId,
-                ':sent_at' => date('Y-m-d H:i:s'),
-            ]);
-        }
-
-        Audit::log($this->pdo, $actorId, 'events', 'create', 'events', $eventId, null, $input, 'Created event from quick modal');
+        Audit::log($this->pdo, $actorId, 'events', 'create', 'events', $eventId, null, $input, 'Created event');
 
         Response::json([
             'success' => true,
@@ -1047,6 +998,42 @@ final class ApiController
                 'event_code' => $eventCode,
             ],
         ], 201);
+    }
+
+    /** Delete an event */
+    public function deleteEvent(int $eventId): void
+    {
+        $user = Auth::user();
+        if (!$user) { Response::json(['success' => false, 'message' => 'Not authenticated'], 401); return; }
+
+        $eventStmt = $this->pdo->prepare('SELECT id FROM `events` WHERE id = :id LIMIT 1');
+        $eventStmt->execute([':id' => $eventId]);
+        $event = $eventStmt->fetch();
+        if (!$event) {
+            Response::json(['success' => false, 'message' => 'Event not found'], 404);
+            return;
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            // Delete related records
+            $this->pdo->prepare('DELETE FROM event_attendance WHERE event_id = :id')->execute([':id' => $eventId]);
+            $this->pdo->prepare('DELETE FROM event_budget_items WHERE event_id = :id')->execute([':id' => $eventId]);
+            $this->pdo->prepare('DELETE FROM event_tasks WHERE event_id = :id')->execute([':id' => $eventId]);
+            $this->pdo->prepare('DELETE FROM event_finance_links WHERE event_id = :id')->execute([':id' => $eventId]);
+            $this->pdo->prepare('DELETE FROM sms_logs WHERE event_id = :id')->execute([':id' => $eventId]);
+            
+            // Delete the event
+            $this->pdo->prepare('DELETE FROM `events` WHERE id = :id')->execute([':id' => $eventId]);
+
+            Audit::log($this->pdo, (int) $user['id'], 'events', 'delete', 'events', $eventId, null, null, "Event deleted");
+
+            $this->pdo->commit();
+            Response::json(['success' => true, 'message' => 'Event deleted successfully']);
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            Response::json(['success' => false, 'message' => 'Failed to delete event: ' . $e->getMessage()], 500);
+        }
     }
 
     public function eventDetails(int $eventId): void
@@ -1084,13 +1071,10 @@ final class ApiController
         }
 
         $eventStmt = $this->pdo->prepare(
-            "SELECT e.id, e.event_code, e.title, e.description, e.category, e.start_datetime, e.end_datetime,
-                    e.venue, e.expected_attendance, e.status, e.budget_total, e.notes,
-                    {$budgetSelect},
-                    u.full_name AS organizer_name, g.name AS target_group
+            "SELECT e.id, e.event_code, e.title, e.description, e.event_type, e.start_datetime, e.end_datetime,
+                    e.location, e.pastor_on_duty, e.usher_on_duty, e.status, e.budget_total,
+                    {$budgetSelect}
              FROM `events` e
-             LEFT JOIN users u ON u.id = e.organizer_user_id
-             LEFT JOIN `groups` g ON g.id = e.target_group_id
              {$budgetJoin}
              WHERE e.id = :id LIMIT 1"
         );
@@ -1996,6 +1980,206 @@ final class ApiController
         );
     }
 
+    public function registerGuest(array $input): void
+    {
+        $this->ensureGuestsTable();
+
+        $required = ['first_name', 'last_name', 'phone', 'location', 'service_date'];
+        foreach ($required as $field) {
+            if (empty($input[$field])) {
+                Response::json(['success' => false, 'message' => ucfirst(str_replace('_', ' ', $field)) . ' is required'], 422);
+                return;
+            }
+        }
+
+        $serviceDate = trim((string) $input['service_date']);
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $serviceDate) !== 1) {
+            Response::json(['success' => false, 'message' => 'service_date must be YYYY-MM-DD'], 422);
+            return;
+        }
+
+        $firstName = trim((string) $input['first_name']);
+        $lastName = trim((string) $input['last_name']);
+        $phone = trim((string) $input['phone']);
+        $location = trim((string) $input['location']);
+        $email = trim((string) ($input['email'] ?? ''));
+        $ageGroup = trim((string) ($input['age_group'] ?? ''));
+        $visitType = trim((string) ($input['visit_type'] ?? 'first_time'));
+        $invitedByName = trim((string) ($input['invited_by_name'] ?? ''));
+        $followUpDate = trim((string) ($input['follow_up_date'] ?? ''));
+        $notes = trim((string) ($input['notes'] ?? ''));
+
+        $allowedVisitTypes = ['first_time', 'returning', 'referred'];
+        if (!in_array($visitType, $allowedVisitTypes, true)) {
+            $visitType = 'first_time';
+        }
+
+        $allowedAgeGroups = ['child', 'teen', 'youth', 'adult', 'senior'];
+        if ($ageGroup && !in_array($ageGroup, $allowedAgeGroups, true)) {
+            $ageGroup = null;
+        }
+
+        // Generate unique guest code
+        $year = (int) date('Y');
+        $countStmt = $this->pdo->prepare('SELECT COUNT(*) FROM guests WHERE guest_code LIKE ?');
+        $countStmt->execute(["GU-$year-%"]);
+        $count = ((int) $countStmt->fetchColumn()) + 1;
+        $guestCode = "GU-$year-" . str_pad((string)$count, 5, '0', STR_PAD_LEFT);
+
+        $user = Auth::user();
+        $actorId = isset($user['id']) ? (int) $user['id'] : null;
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO guests (
+                guest_code, first_name, last_name, phone, location, email,
+                age_group, visit_type, invited_by_name, service_date, 
+                follow_up_date, notes, status, created_by
+             ) VALUES (
+                :guest_code, :first_name, :last_name, :phone, :location, :email,
+                :age_group, :visit_type, :invited_by_name, :service_date,
+                :follow_up_date, :notes, :status, :created_by
+             )'
+        );
+
+        $stmt->execute([
+            ':guest_code' => $guestCode,
+            ':first_name' => $firstName,
+            ':last_name' => $lastName,
+            ':phone' => $phone,
+            ':location' => $location,
+            ':email' => $email ?: null,
+            ':age_group' => $ageGroup ?: null,
+            ':visit_type' => $visitType,
+            ':invited_by_name' => $invitedByName ?: null,
+            ':service_date' => $serviceDate,
+            ':follow_up_date' => $followUpDate ?: null,
+            ':notes' => $notes,
+            ':status' => 'registered',
+            ':created_by' => $actorId,
+        ]);
+
+        $guestId = (int) $this->pdo->lastInsertId();
+        Audit::log($this->pdo, $actorId, 'attendance', 'create', 'guests', $guestId, null, [
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'phone' => $phone,
+            'location' => $location,
+            'visit_type' => $visitType,
+        ], "Registered guest: $firstName $lastName");
+
+        Response::json([
+            'success' => true,
+            'message' => 'Guest registered successfully',
+            'data' => [
+                'id' => $guestId,
+                'guest_code' => $guestCode,
+            ],
+        ], 201);
+    }
+
+    public function getGuests(): void
+    {
+        $this->ensureGuestsTable();
+
+        $search = trim((string) ($_GET['search'] ?? ''));
+        $status = trim((string) ($_GET['status'] ?? ''));
+        $sortBy = trim((string) ($_GET['sort'] ?? 'service_date'));
+        $sortOrder = trim((string) ($_GET['order'] ?? 'DESC'));
+
+        // Validate sort parameters
+        $allowedSortFields = ['guest_code', 'first_name', 'last_name', 'phone', 'service_date', 'status', 'created_at'];
+        if (!in_array($sortBy, $allowedSortFields, true)) {
+            $sortBy = 'service_date';
+        }
+        if (!in_array(strtoupper($sortOrder), ['ASC', 'DESC'], true)) {
+            $sortOrder = 'DESC';
+        }
+
+        $query = 'SELECT 
+                    id, guest_code, first_name, last_name, phone, location, 
+                    email, age_group, visit_type, invited_by_name, service_date, 
+                    follow_up_date, notes, status, created_by, created_at, updated_at
+                  FROM guests
+                  WHERE 1=1';
+
+        $params = [];
+
+        // Search filter
+        if ($search) {
+            $query .= ' AND (
+                LOWER(guest_code) LIKE LOWER(?) OR 
+                LOWER(first_name) LIKE LOWER(?) OR 
+                LOWER(last_name) LIKE LOWER(?) OR 
+                LOWER(phone) LIKE LOWER(?) OR 
+                LOWER(email) LIKE LOWER(?) OR
+                LOWER(location) LIKE LOWER(?)
+            )';
+            $searchTerm = "%$search%";
+            $params = array_fill(0, 6, $searchTerm);
+        }
+
+        // Status filter
+        if ($status) {
+            $allowedStatuses = ['registered', 'visited', 'converted', 'inactive'];
+            if (in_array($status, $allowedStatuses, true)) {
+                $query .= ' AND status = ?';
+                $params[] = $status;
+            }
+        }
+
+        $query .= " ORDER BY $sortBy $sortOrder";
+
+        try {
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute($params);
+            $guests = $stmt->fetchAll();
+
+            Response::json([
+                'success' => true,
+                'data' => $guests ?: [],
+                'count' => count($guests),
+            ]);
+        } catch (Exception $e) {
+            Response::json(['success' => false, 'message' => 'Failed to fetch guests'], 500);
+        }
+    }
+
+    private function ensureGuestsTable(): void
+    {
+        $this->pdo->exec(
+            'CREATE TABLE IF NOT EXISTS guests (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                guest_code VARCHAR(50) NOT NULL UNIQUE,
+                first_name VARCHAR(100) NOT NULL,
+                last_name VARCHAR(100) NOT NULL,
+                phone VARCHAR(30) NOT NULL,
+                location VARCHAR(255) NOT NULL,
+                invited_by_member_id BIGINT UNSIGNED NULL,
+                invited_by_name VARCHAR(100) NULL,
+                service_date DATE NOT NULL,
+                visit_type ENUM("first_time", "returning", "referred") NOT NULL DEFAULT "first_time",
+                email VARCHAR(150) NULL,
+                age_group ENUM("child", "teen", "youth", "adult", "senior") NULL,
+                notes TEXT NULL,
+                status ENUM("registered", "visited", "converted", "inactive") NOT NULL DEFAULT "registered",
+                follow_up_date DATE NULL,
+                created_by BIGINT UNSIGNED NULL,
+                created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                
+                CONSTRAINT fk_guests_invited_by FOREIGN KEY (invited_by_member_id) REFERENCES members(id)
+                    ON UPDATE CASCADE ON DELETE SET NULL,
+                CONSTRAINT fk_guests_created_by FOREIGN KEY (created_by) REFERENCES users(id)
+                    ON UPDATE CASCADE ON DELETE SET NULL,
+                
+                INDEX idx_guests_phone (phone),
+                INDEX idx_guests_service_date (service_date),
+                INDEX idx_guests_status (status),
+                INDEX idx_guests_location (location)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+    }
+
     /* ───── Assets ───── */
 
     public function assetsOverview(): void
@@ -2716,18 +2900,27 @@ final class ApiController
 
     public function listDepartments(): void
     {
-        if (!$this->columnExists('departments', 'id')) {
-            Response::json(['success' => true, 'data' => []]);
-            return;
+        try {
+            if (!$this->columnExists('departments', 'id')) {
+                Response::json(['success' => true, 'data' => []]);
+                return;
+            }
+            
+            // Check if head_email column exists
+            $hasHeadEmail = $this->columnExists('departments', 'head_email');
+            
+            $onlyActive = ($_GET['active'] ?? '') === '1';
+            $headEmailCol = $hasHeadEmail ? ', d.head_email' : '';
+            $sql = "SELECT d.id, d.name, d.description, d.is_active, d.head_name
+                           {$headEmailCol}
+                    FROM departments d
+                    " . ($onlyActive ? "WHERE d.is_active = 1" : "") . "
+                    ORDER BY d.name ASC";
+            $rows = $this->pdo->query($sql)->fetchAll();
+            Response::json(['success' => true, 'data' => $rows]);
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
-        $onlyActive = ($_GET['active'] ?? '') === '1';
-        $sql = "SELECT d.id, d.name, d.description, d.is_active, d.head_name,
-                       d.head_email
-                FROM departments d
-                " . ($onlyActive ? "WHERE d.is_active = 1" : "") . "
-                ORDER BY d.name ASC";
-        $rows = $this->pdo->query($sql)->fetchAll();
-        Response::json(['success' => true, 'data' => $rows]);
     }
 
     public function createDepartment(array $input): void
@@ -2789,69 +2982,73 @@ final class ApiController
 
     public function setDepartmentCredentials(int $id, array $input): void
     {
-        $user = Auth::user();
-        if (!$user) { Response::json(['success' => false, 'message' => 'Not authenticated'], 401); return; }
+        try {
+            $user = Auth::user();
+            if (!$user) { Response::json(['success' => false, 'message' => 'Not authenticated'], 401); return; }
 
-        // Check if required columns exist (migrations must be run first)
-        if (!$this->columnExists('departments', 'head_email')) {
-            Response::json(['success' => false, 'message' => 'Database migration required. Please run: database/migrations/2026_04_09_001_modify_departments_for_separate_login.sql'], 400);
-            return;
+            // Check if required columns exist (migrations must be run first)
+            if (!$this->columnExists('departments', 'head_email')) {
+                Response::json(['success' => false, 'message' => 'Database migration required. Please run: database/migrations/2026_04_09_001_modify_departments_for_separate_login.sql'], 400);
+                return;
+            }
+
+            $email = trim((string) ($input['head_email'] ?? ''));
+            $password = trim((string) ($input['head_password'] ?? ''));
+            $passwordConfirm = trim((string) ($input['head_password_confirm'] ?? ''));
+
+            // Validation - require both email and password
+            if (empty($email)) {
+                Response::json(['success' => false, 'message' => 'Email is required'], 422);
+                return;
+            }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                Response::json(['success' => false, 'message' => 'Invalid email format'], 422);
+                return;
+            }
+
+            if (empty($password)) {
+                Response::json(['success' => false, 'message' => 'Password is required'], 422);
+                return;
+            }
+
+            if (strlen($password) < 6) {
+                Response::json(['success' => false, 'message' => 'Password must be at least 6 characters'], 422);
+                return;
+            }
+
+            if ($password !== $passwordConfirm) {
+                Response::json(['success' => false, 'message' => 'Passwords do not match'], 422);
+                return;
+            }
+
+            // Check email uniqueness (excluding current department)
+            $stmt = $this->pdo->prepare('SELECT COUNT(*) as cnt FROM departments WHERE head_email = :email AND id != :id');
+            $stmt->execute([':email' => $email, ':id' => $id]);
+            $row = $stmt->fetch();
+            if ($row['cnt'] > 0) {
+                Response::json(['success' => false, 'message' => 'Email is already in use by another department'], 422);
+                return;
+            }
+
+            // Hash password
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+            // Update department with email and password
+            $stmt = $this->pdo->prepare('UPDATE departments SET head_email = :email, password = :password WHERE id = :id');
+            $stmt->execute([
+                ':email' => $email,
+                ':password' => $hashedPassword,
+                ':id' => $id,
+            ]);
+
+            Audit::log($this->pdo, (int) $user['id'], 'settings', 'set_department_credentials', 'departments', $id, null,
+                ['head_email' => $email], 'Set department head credentials');
+
+            Response::json(['success' => true, 'message' => 'Department credentials saved successfully']);
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
-
-        $email = trim((string) ($input['head_email'] ?? ''));
-        $password = trim((string) ($input['head_password'] ?? ''));
-        $passwordConfirm = trim((string) ($input['head_password_confirm'] ?? ''));
-
-        // Validation - require both email and password
-        if (empty($email)) {
-            Response::json(['success' => false, 'message' => 'Email is required'], 422);
-            return;
-        }
-
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            Response::json(['success' => false, 'message' => 'Invalid email format'], 422);
-            return;
-        }
-
-        if (empty($password)) {
-            Response::json(['success' => false, 'message' => 'Password is required'], 422);
-            return;
-        }
-
-        if (strlen($password) < 6) {
-            Response::json(['success' => false, 'message' => 'Password must be at least 6 characters'], 422);
-            return;
-        }
-
-        if ($password !== $passwordConfirm) {
-            Response::json(['success' => false, 'message' => 'Passwords do not match'], 422);
-            return;
-        }
-
-        // Check email uniqueness (excluding current department)
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) as cnt FROM departments WHERE head_email = :email AND id != :id');
-        $stmt->execute([':email' => $email, ':id' => $id]);
-        $row = $stmt->fetch();
-        if ($row['cnt'] > 0) {
-            Response::json(['success' => false, 'message' => 'Email is already in use by another department'], 422);
-            return;
-        }
-
-        // Hash password
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-        // Update department with email and password
-        $stmt = $this->pdo->prepare('UPDATE departments SET head_email = :email, password = :password WHERE id = :id');
-        $stmt->execute([
-            ':email' => $email,
-            ':password' => $hashedPassword,
-            ':id' => $id,
-        ]);
-
-        Audit::log($this->pdo, (int) $user['id'], 'settings', 'set_department_credentials', 'departments', $id, null,
-            ['head_email' => $email], 'Set department head credentials');
-
-        Response::json(['success' => true, 'message' => 'Department credentials saved successfully']);
     }
 
     /* ───── Department Budgets ───── */
@@ -3683,13 +3880,21 @@ final class ApiController
     /** List approval workflows */
     public function listApprovalWorkflows(): void
     {
-        $stmt = $this->pdo->query(
-            'SELECT aw.*, r.name AS role_name
-             FROM approval_workflows aw
-             INNER JOIN roles r ON r.id = aw.role_id
-             ORDER BY aw.workflow_type, aw.level_no'
-        );
-        Response::json(['success' => true, 'data' => $stmt->fetchAll()]);
+        try {
+            if (!$this->tableExists('approval_workflows')) {
+                Response::json(['success' => true, 'data' => []]);
+                return;
+            }
+            $stmt = $this->pdo->query(
+                'SELECT aw.*, r.name AS role_name
+                 FROM approval_workflows aw
+                 INNER JOIN roles r ON r.id = aw.role_id
+                 ORDER BY aw.workflow_type, aw.level_no'
+            );
+            Response::json(['success' => true, 'data' => $stmt->fetchAll()]);
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+        }
     }
 
     /** Save (upsert) an approval workflow level */
@@ -3728,31 +3933,48 @@ final class ApiController
     /** List all roles with their permissions */
     public function listRolesWithPermissions(): void
     {
-        $roles = $this->pdo->query('SELECT * FROM roles ORDER BY id')->fetchAll();
-        $perms = $this->pdo->query(
-            'SELECT rp.role_id, p.id AS permission_id, p.name, p.module, p.description
-             FROM role_permissions rp
-             INNER JOIN permissions p ON p.id = rp.permission_id
-             ORDER BY p.module, p.name'
-        )->fetchAll();
+        try {
+            $roles = $this->pdo->query('SELECT * FROM roles ORDER BY id')->fetchAll();
+            
+            // Safely get permissions if role_permissions table exists
+            $perms = [];
+            if ($this->tableExists('role_permissions')) {
+                $perms = $this->pdo->query(
+                    'SELECT rp.role_id, p.id AS permission_id, p.name, p.module, p.description
+                     FROM role_permissions rp
+                     INNER JOIN permissions p ON p.id = rp.permission_id
+                     ORDER BY p.module, p.name'
+                )->fetchAll();
+            }
 
-        $grouped = [];
-        foreach ($perms as $p) {
-            $grouped[(int) $p['role_id']][] = $p;
+            $grouped = [];
+            foreach ($perms as $p) {
+                $grouped[(int) $p['role_id']][] = $p;
+            }
+
+            foreach ($roles as &$r) {
+                $r['permissions'] = $grouped[(int) $r['id']] ?? [];
+            }
+
+            Response::json(['success' => true, 'data' => $roles]);
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
-
-        foreach ($roles as &$r) {
-            $r['permissions'] = $grouped[(int) $r['id']] ?? [];
-        }
-
-        Response::json(['success' => true, 'data' => $roles]);
     }
 
     /** List all available permissions */
     public function listPermissions(): void
     {
-        $rows = $this->pdo->query('SELECT * FROM permissions ORDER BY module, name')->fetchAll();
-        Response::json(['success' => true, 'data' => $rows]);
+        try {
+            if (!$this->tableExists('permissions')) {
+                Response::json(['success' => true, 'data' => []]);
+                return;
+            }
+            $rows = $this->pdo->query('SELECT * FROM permissions ORDER BY module, name')->fetchAll();
+            Response::json(['success' => true, 'data' => $rows]);
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+        }
     }
 
     /** Update permissions for a role */
@@ -4172,15 +4394,19 @@ final class ApiController
     /** List all users with role details */
     public function listAllUsers(): void
     {
-        $rows = $this->pdo->query(
-            'SELECT u.id, u.full_name, u.email, u.phone, u.is_active,
-                    u.last_login_at, u.created_at, u.role_id,
-                    r.name AS role_name
-             FROM users u
-             LEFT JOIN roles r ON r.id = u.role_id
-             ORDER BY u.full_name ASC'
-        )->fetchAll();
-        Response::json(['success' => true, 'message' => 'All users', 'data' => $rows]);
+        try {
+            $rows = $this->pdo->query(
+                'SELECT u.id, u.full_name, u.email, u.phone, u.is_active,
+                        u.last_login_at, u.created_at, u.role_id,
+                        r.name AS role_name
+                 FROM users u
+                 LEFT JOIN roles r ON r.id = u.role_id
+                 ORDER BY u.full_name ASC'
+            )->fetchAll();
+            Response::json(['success' => true, 'message' => 'All users', 'data' => $rows]);
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+        }
     }
 
     /** Create a new user */
@@ -4320,34 +4546,54 @@ final class ApiController
     /** Get all church profile settings */
     public function getChurchProfile(): void
     {
-        $rows = $this->pdo->query('SELECT setting_key, setting_value FROM church_settings ORDER BY id ASC')->fetchAll();
-        $profile = [];
-        foreach ($rows as $r) {
-            $profile[$r['setting_key']] = $r['setting_value'];
+        try {
+            // Check if church_settings table exists
+            if (!$this->tableExists('church_settings')) {
+                Response::json(['success' => true, 'message' => 'Church profile', 'data' => []], 200);
+                return;
+            }
+            
+            $rows = $this->pdo->query('SELECT setting_key, setting_value FROM church_settings ORDER BY id ASC')->fetchAll();
+            $profile = [];
+            foreach ($rows as $r) {
+                $profile[$r['setting_key']] = $r['setting_value'];
+            }
+            Response::json(['success' => true, 'message' => 'Church profile', 'data' => $profile]);
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
-        Response::json(['success' => true, 'message' => 'Church profile', 'data' => $profile]);
     }
 
     /** Update church profile settings */
     public function updateChurchProfile(array $input): void
     {
-        $allowed = ['church_name', 'location', 'phone', 'email', 'address', 'pastor_name', 'founded_year', 'church_logo'];
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO church_settings (setting_key, setting_value)
-             VALUES (:k, :v)
-             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
-        );
+        try {
+            // Check if church_settings table exists
+            if (!$this->tableExists('church_settings')) {
+                Response::json(['success' => false, 'message' => 'Database migration required. Run database/migrations/2026_04_03_001_create_church_settings.sql'], 400);
+                return;
+            }
+            
+            $allowed = ['church_name', 'location', 'phone', 'email', 'address', 'pastor_name', 'founded_year', 'church_logo'];
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO church_settings (setting_key, setting_value)
+                 VALUES (:k, :v)
+                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
+            );
 
-        $updated = 0;
-        foreach ($input as $key => $value) {
-            if (!in_array($key, $allowed, true)) continue;
-            $stmt->execute([':k' => $key, ':v' => trim((string) $value)]);
-            $updated++;
+            $updated = 0;
+            foreach ($input as $key => $value) {
+                if (!in_array($key, $allowed, true)) continue;
+                $stmt->execute([':k' => $key, ':v' => trim((string) $value)]);
+                $updated++;
+            }
+
+            Audit::log($this->pdo, (int) ($_SESSION['user']['id'] ?? 0), 'settings', 'update_church_profile', 'church_settings', 0, null, $input, "Church profile updated");
+
+            Response::json(['success' => true, 'message' => 'Church profile updated', 'data' => ['updated' => $updated]]);
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
-
-        Audit::log($this->pdo, (int) ($_SESSION['user']['id'] ?? 0), 'settings', 'update_church_profile', 'church_settings', 0, null, $input, "Church profile updated");
-
-        Response::json(['success' => true, 'message' => 'Church profile updated', 'data' => ['updated' => $updated]]);
     }
 
     /** Upload church logo image */

@@ -1,14 +1,24 @@
-﻿<?php
-/** @var string|null $error */
-$B = $baseUrl ?? (defined("BASE_URL") ? BASE_URL : "");
-$cn = htmlspecialchars($churchName ?? 'Church CMS', ENT_QUOTES, 'UTF-8');
+﻿ <?php
+/**
+ * Unified Login Page - Main Entry Point for All Systems
+ * Supports: Admin (all roles) + Department Heads
+ * 
+ * Login roles:
+ * - Admin: Administrator, Pastor, Accountant, Secretary
+ * - Department: Department Head
+ */
+
+$baseUrl = $baseUrl ?? (defined("BASE_URL") ? BASE_URL : "");
+$churchName = htmlspecialchars($churchName ?? 'Church CMS', ENT_QUOTES, 'UTF-8');
+$error = $error ?? null;
+$logoUrl = $logoUrl ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $cn ?> &mdash; Sign In</title>
+    <title><?= $churchName ?> &mdash; Sign In</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -403,7 +413,7 @@ $cn = htmlspecialchars($churchName ?? 'Church CMS', ENT_QUOTES, 'UTF-8');
             <!-- Logo -->
             <div class="brand-logo">
                 <?php if (!empty($churchLogo)): ?>
-                    <img src="<?= htmlspecialchars($B . $churchLogo) ?>" alt="<?= $cn ?>">
+                    <img src="<?= htmlspecialchars($baseUrl . $churchLogo) ?>" alt="<?= $churchName ?>">
                 <?php else: ?>
                     <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <circle cx="40" cy="40" r="38" stroke="#D4A017" stroke-width="1" opacity=".2"/>
@@ -413,7 +423,7 @@ $cn = htmlspecialchars($churchName ?? 'Church CMS', ENT_QUOTES, 'UTF-8');
                 <?php endif; ?>
             </div>
 
-            <h1 class="brand-name"><?= $cn ?></h1>
+            <h1 class="brand-name"><?= $churchName ?></h1>
             <p class="brand-tagline">Manage &middot; Grow &middot; Serve</p>
 
             <div class="brand-divider"></div>
@@ -447,7 +457,7 @@ $cn = htmlspecialchars($churchName ?? 'Church CMS', ENT_QUOTES, 'UTF-8');
             </div>
         </div>
 
-        <div class="brand-footer">&copy; <?= date('Y') ?> <?= $cn ?> &middot; v1.0</div>
+        <div class="brand-footer">&copy; <?= date('Y') ?> <?= $churchName ?> &middot; v1.0</div>
     </div>
 
     <!-- ══ RIGHT: Form ══ -->
@@ -464,7 +474,7 @@ $cn = htmlspecialchars($churchName ?? 'Church CMS', ENT_QUOTES, 'UTF-8');
                     </div>
                 <?php endif; ?>
 
-                <form id="loginForm" method="POST" action="<?= htmlspecialchars($B . '/login') ?>" novalidate>
+                <form id="loginForm" method="POST" action="<?= htmlspecialchars($baseUrl . '/login') ?>" novalidate>
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Auth::getCsrfToken()) ?>">
 
                     <!-- Login method toggle -->
@@ -504,7 +514,7 @@ $cn = htmlspecialchars($churchName ?? 'Church CMS', ENT_QUOTES, 'UTF-8');
                         </div>
                     </div>
 
-                    <!-- Password -->
+                     <!-- Password -->
                     <div class="field">
                         <label for="password" class="field-label">Password</label>
                         <div class="field-wrap">
@@ -528,7 +538,7 @@ $cn = htmlspecialchars($churchName ?? 'Church CMS', ENT_QUOTES, 'UTF-8');
                     </button>
                 </form>
 
-                <a href="<?= htmlspecialchars($B . '/forgot-password') ?>" class="forgot-link">Forgot your password?</a>
+                <a href="<?= htmlspecialchars($baseUrl . '/forgot-password') ?>" class="forgot-link">Forgot your password?</a>
 
                 <div class="secure-note">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

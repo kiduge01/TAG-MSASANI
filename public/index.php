@@ -14,9 +14,11 @@ require_once __DIR__ . '/../app/core/Audit.php';
 require_once __DIR__ . '/../app/core/Response.php';
 require_once __DIR__ . '/../app/controllers/PageController.php';
 require_once __DIR__ . '/../app/controllers/ApiController.php';
+require_once __DIR__ . '/../app/controllers/UnifiedAuthController.php';
 
 use App\Controllers\ApiController;
 use App\Controllers\PageController;
+use App\Controllers\UnifiedAuthController;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Response;
@@ -36,6 +38,7 @@ try {
 
 $pageController = new PageController($pdo);
 $apiController  = new ApiController($pdo);
+$unifiedAuthController = new UnifiedAuthController($pdo);
 
 $uri    = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -54,10 +57,56 @@ if ($uri[0] !== '/') {
 
 // ────── API routes (no HTML, JSON only) ──────
 if (str_starts_with($uri, '/api/v1/')) {
+    // Ensure no output before JSON
+    if (ob_get_level() === 0) ob_start();
+    
+    // Set strict error handling for API
+    error_reporting(E_ALL);
+    ini_set('display_errors', '0');
+    ini_set('log_errors', '1');
+    
+    // Catch all errors and convert to JSON
+    set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+        // Clear any output buffers
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal error: ' . $errstr,
+            'debug' => [
+                'file' => $errfile,
+                'line' => $errline,
+                'code' => $errno
+            ]
+        ]);
+        exit;
+    });
+    
+    set_exception_handler(function (\Throwable $e) {
+        // Clear any output buffers
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Exception: ' . $e->getMessage(),
+            'debug' => [
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]
+        ]);
+        exit;
+    });
+    
     header('Content-Type: application/json; charset=utf-8');
 
     // Auth-exempt API endpoints
-    $authExempt = ['/api/v1/auth/login', '/api/v1/auth/forgot-password', '/api/v1/auth/reset-password'];
+    $authExempt = ['/api/v1/auth/login', '/api/v1/auth/forgot-password', '/api/v1/auth/reset-password', '/api/v1/unified-login'];
 
     if (!Auth::check() && !in_array($uri, $authExempt, true)) {
         Response::json(['success' => false, 'message' => 'Unauthenticated'], 401);
@@ -72,6 +121,9 @@ if (str_starts_with($uri, '/api/v1/')) {
     }
 
     match (true) {
+        $method === 'POST' && $uri === '/api/v1/unified-login'
+            => $unifiedAuthController->login(json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
+
         $method === 'POST' && $uri === '/api/v1/auth/login'
             => $apiController->login(json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
 
@@ -111,6 +163,12 @@ if (str_starts_with($uri, '/api/v1/')) {
         $method === 'POST' && $uri === '/api/v1/attendance/snapshots'
             => $apiController->recordAttendanceSnapshot(json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
 
+        $method === 'POST' && $uri === '/api/v1/attendance/register-guest'
+            => $apiController->registerGuest(json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
+
+        $method === 'GET' && $uri === '/api/v1/attendance/guests'
+            => $apiController->getGuests(),
+
         $method === 'GET' && $uri === '/api/v1/assets/overview'
             => $apiController->assetsOverview(),
 
@@ -143,6 +201,9 @@ if (str_starts_with($uri, '/api/v1/')) {
 
         $method === 'POST' && $uri === '/api/v1/events'
             => $apiController->createEvent(json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
+
+        $method === 'DELETE' && preg_match('#^/api/v1/events/(\d+)$#', $uri, $m) === 1
+            => $apiController->deleteEvent((int) $m[1]),
 
         $method === 'GET' && preg_match('#^/api/v1/events/(\d+)/details$#', $uri, $m) === 1
             => $apiController->eventDetails((int) $m[1]),
@@ -552,7 +613,21 @@ if ($method === 'GET' && $uri === '/login') {
         Response::redirect('/');
         exit;
     }
-    $pageController->loginPage();
+    
+    // Load church settings for logo
+    $churchLogo = null;
+    try {
+        $logoStmt = $pdo->query("SELECT logo_url FROM church_settings LIMIT 1");
+        $churchLogo = $logoStmt->fetchColumn();
+    } catch (\Throwable $e) {
+        // Settings may not exist yet
+    }
+    
+    $baseUrl = BASE_URL;
+    $churchName = $config['app']['church_name'] ?? 'Church CMS';
+    $error = null;
+    
+    require __DIR__ . '/../app/views/pages/login.php';
     exit;
 }
 

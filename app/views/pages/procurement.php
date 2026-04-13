@@ -491,6 +491,24 @@ async function viewPRDetail(id) {
     } catch (e) { console.error(e); }
 }
 
+// ── Tab Switching ──
+document.querySelectorAll('.ptab').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const tabName = this.dataset.ptab;
+        // Hide all panels
+        document.querySelectorAll('.ptab-panel').forEach(p => p.classList.add('hidden'));
+        // Show selected panel
+        document.getElementById('ptab-' + tabName).classList.remove('hidden');
+        // Update active tab styling
+        document.querySelectorAll('.ptab').forEach(b => {
+            b.classList.remove('ptab-active');
+            b.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700');
+        });
+        this.classList.add('ptab-active');
+        this.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700');
+    });
+});
+
 // ── Init ──
 loadPRData();
 </script>

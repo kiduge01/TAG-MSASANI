@@ -16,6 +16,10 @@ DROP TABLE IF EXISTS event_finance_links;
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS member_group_assignments;
 DROP TABLE IF EXISTS groups;
+DROP TABLE IF EXISTS department_reports;
+DROP TABLE IF EXISTS department_leaders;
+DROP TABLE IF EXISTS department_members;
+DROP TABLE IF EXISTS departments;
 DROP TABLE IF EXISTS finance_entries;
 DROP TABLE IF EXISTS finance_categories;
 DROP TABLE IF EXISTS purchase_order_items;
@@ -548,6 +552,85 @@ CREATE TABLE login_attempts (
   INDEX idx_login_attempts_time (attempted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ─── Department Subsystem Tables ───
+
+CREATE TABLE departments (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL UNIQUE,
+  description VARCHAR(255) NULL,
+  head_user_id BIGINT UNSIGNED NULL COMMENT 'Optional department head (user)',
+  head_name VARCHAR(100) NULL COMMENT 'Department head full name for separate login',
+  head_email VARCHAR(100) NULL COMMENT 'Department head email for separate login',
+  head_phone VARCHAR(30) NULL COMMENT 'Department head phone number',
+  head_password_hash VARCHAR(255) NULL COMMENT 'Department head password (separate from users table)',
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_departments_head FOREIGN KEY (head_user_id) REFERENCES users(id)
+    ON UPDATE CASCADE ON DELETE SET NULL,
+  INDEX idx_departments_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE department_members (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  department_id BIGINT UNSIGNED NOT NULL,
+  member_id BIGINT UNSIGNED NOT NULL,
+  assigned_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  notes VARCHAR(255) NULL COMMENT 'Role or additional info (e.g., Worship Leader, Youth Coordinator)',
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_dept_member (department_id, member_id),
+  CONSTRAINT fk_dept_members_dept FOREIGN KEY (department_id) REFERENCES departments(id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_dept_members_member FOREIGN KEY (member_id) REFERENCES members(id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  INDEX idx_dept_members_department (department_id),
+  INDEX idx_dept_members_member (member_id),
+  INDEX idx_dept_members_assigned_date (assigned_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE department_leaders (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  department_id BIGINT UNSIGNED NOT NULL,
+  member_id BIGINT UNSIGNED NULL COMMENT 'FK to members table if leader is a member',
+  leader_type VARCHAR(50) NOT NULL COMMENT 'e.g., Chairman, Treasurer, Secretary, Coordinator',
+  leader_name VARCHAR(100) NOT NULL COMMENT 'Full name of leader (denormalized for easy display)',
+  email VARCHAR(100) NULL,
+  phone VARCHAR(20) NULL,
+  bio TEXT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_dept_leaders_dept FOREIGN KEY (department_id) REFERENCES departments(id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_dept_leaders_member FOREIGN KEY (member_id) REFERENCES members(id)
+    ON UPDATE CASCADE ON DELETE SET NULL,
+  INDEX idx_dept_leaders_department (department_id),
+  INDEX idx_dept_leaders_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE department_reports (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  department_id BIGINT UNSIGNED NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description LONGTEXT NOT NULL,
+  report_date DATE NOT NULL,
+  category VARCHAR(50) NOT NULL COMMENT 'e.g., Monthly, Activity, Finance, Other',
+  status ENUM('draft','submitted','approved','rejected') NOT NULL DEFAULT 'draft',
+  submitted_at DATETIME NULL,
+  reviewed_by BIGINT UNSIGNED NULL COMMENT 'Admin user who reviewed',
+  reviewed_at DATETIME NULL,
+  review_notes TEXT NULL,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_dept_reports_dept FOREIGN KEY (department_id) REFERENCES departments(id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_dept_reports_reviewed_by FOREIGN KEY (reviewed_by) REFERENCES users(id)
+    ON UPDATE CASCADE ON DELETE SET NULL,
+  INDEX idx_dept_reports_department (department_id),
+  INDEX idx_dept_reports_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Baseline roles and finance categories.
 INSERT INTO roles (name, description) VALUES
 ('Admin', 'Full access across all modules'),
@@ -562,3 +645,12 @@ INSERT INTO finance_categories (category_type, code, name, description, is_syste
 ('expense', 'PROCUREMENT', 'Procurement Expense', 'Expenses from approved procurement', 1, 1),
 ('expense', 'MAINTENANCE', 'Maintenance', 'Asset maintenance and repair', 1, 1),
 ('expense', 'EVENT_EXPENSE', 'Event Expense', 'Event operational expenses', 1, 1);
+
+-- Default departments
+INSERT INTO departments (name, description, is_active) VALUES
+('Ibada', 'Idara ya ibada na muziki', 1),
+('Vijana', 'Idara ya vijana', 1),
+('Ujenzi', 'Mradi wa ujenzi wa kanisa', 1),
+('Huduma', 'Huduma za jamii na misaada', 1),
+('Elimu', 'Elimu ya Biblia na mafunzo', 1),
+('Utawala', 'Utawala na usimamizi wa kanisa', 1);

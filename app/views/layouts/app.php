@@ -51,24 +51,33 @@ $menu = [
     </script>
     <link rel="stylesheet" href="<?= $B ?>/assets/css/app.css">
     <meta name="csrf-token" content="<?= htmlspecialchars(\App\Core\Auth::getCsrfToken()) ?>">
-    <script>const BASE_URL = '<?= $B ?>';</script>
     <script>
-    /* ── Global CSRF for all fetch() calls ── */
-    const CSRF_TOKEN = document.currentScript.parentElement.querySelector('meta[name="csrf-token"]')?.content || '';
-    (function(){
-        const _origFetch = window.fetch;
-        window.fetch = function(url, opts) {
-            opts = opts || {};
-            if (opts.method && opts.method.toUpperCase() !== 'GET') {
-                if (opts.headers instanceof Headers) {
-                    if (!opts.headers.has('X-CSRF-TOKEN')) opts.headers.set('X-CSRF-TOKEN', CSRF_TOKEN);
-                } else {
-                    opts.headers = Object.assign({'X-CSRF-TOKEN': CSRF_TOKEN}, opts.headers || {});
+        const BASE_URL = '<?= $B ?>';
+        // Extract CSRF token from meta tag
+        const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        
+        // Global fetch interceptor to add CSRF token to all non-GET requests
+        (function() {
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                // Only add CSRF token for state-changing requests
+                if (!options.method || !['GET', 'HEAD'].includes(options.method.toUpperCase())) {
+                    // Ensure headers object exists
+                    if (!options.headers) {
+                        options.headers = {};
+                    }
+                    // Only add CSRF token if not already present
+                    if (!(options.headers instanceof Headers)) {
+                        if (!options.headers['X-CSRF-TOKEN']) {
+                            options.headers['X-CSRF-TOKEN'] = CSRF_TOKEN;
+                        }
+                    } else if (!options.headers.has('X-CSRF-TOKEN')) {
+                        options.headers.set('X-CSRF-TOKEN', CSRF_TOKEN);
+                    }
                 }
-            }
-            return _origFetch.call(this, url, opts);
-        };
-    })();
+                return originalFetch.call(this, url, options);
+            };
+        })();
     </script>
     <style>
         * { box-sizing: border-box; }

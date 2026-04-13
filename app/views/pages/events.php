@@ -13,7 +13,8 @@
     </div>
 
     <form id="create-event-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <input name="title" required placeholder="Event / Appointment title" class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+        <input name="title" required placeholder="Event Title" class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+        
         <select id="event-type" name="event_type" required class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
             <option value="">Type</option>
             <option value="service">Service</option>
@@ -21,30 +22,23 @@
             <option value="meeting">Meeting</option>
             <option value="appointment">Appointment</option>
         </select>
+        
         <input name="date" type="date" required class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
         <input name="time" type="time" required class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
 
-        <input name="location" placeholder="Location" class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+        <input name="location" placeholder="Location" required class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
         <input id="event-budget" name="budget" type="number" min="0" step="0.01" placeholder="Budget (TZS)" class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
-        <div id="attendance-wrap"><input name="expected_attendance" type="number" min="0" placeholder="Expected attendance" class="w-full rounded-xl border border-mist-200 px-3 py-2.5 text-sm"></div>
-        <div id="appt-with-wrap" class="hidden"><input id="appt-with" name="appointment_with" placeholder="Appointment with (e.g., Pastor Grace, Elder John)" class="w-full rounded-xl border border-rose-300 bg-rose-50 px-3 py-2.5 text-sm placeholder-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300"></div>
-        <input id="duration-hours" name="duration_hours" type="number" min="1" max="24" step="1" value="2" placeholder="Duration (hours)" class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
-
-        <select id="organizer-user" name="organizer_user_id" class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm"><option value="">Organizer person</option></select>
-        <select id="target-group" name="target_group_id" class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm"><option value="">Organizer group</option></select>
-        <label class="inline-flex items-center gap-2 text-sm text-mist-700 rounded-xl border border-mist-200 px-3 py-2.5">
-            <input id="notify-accountant" type="checkbox" value="1">Notify accountant for budget follow-up
-        </label>
+        
+        <input name="pastor_on_duty" placeholder="Pastor on Duty" class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+        <input name="usher_on_duty" placeholder="Usher on Duty" class="rounded-xl border border-mist-200 px-3 py-2.5 text-sm">
+        
         <div class="inline-flex items-center gap-3 text-sm text-mist-700 rounded-xl border border-mist-200 px-3 py-2.5">
             <label class="inline-flex items-center gap-2"><input type="checkbox" name="send_email" value="1">Email</label>
             <label class="inline-flex items-center gap-2"><input type="checkbox" name="send_sms" value="1">SMS</label>
         </div>
 
-        <div id="appt-banner" class="hidden lg:col-span-4 flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-xl px-4 py-2.5">
-            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-rose-500 rounded-full px-3 py-1">&#128197; Appointment</span>
-            <span class="text-sm text-rose-800">This is a personal appointment. The <strong>"Appointment With"</strong> name will appear on the calendar.</span>
-        </div>
-        <textarea id="event-description" name="description" rows="2" placeholder="Description / agenda" class="md:col-span-2 lg:col-span-3 rounded-xl border border-mist-200 px-3 py-2.5 text-sm"></textarea>
+        <textarea id="event-description" name="description" rows="2" placeholder="Description / Agenda" class="md:col-span-2 lg:col-span-3 rounded-xl border border-mist-200 px-3 py-2.5 text-sm"></textarea>
+        
         <div class="flex items-end justify-end">
             <button type="submit" class="w-full md:w-auto px-5 py-2.5 rounded-xl bg-royal-600 text-white hover:bg-royal-700 text-sm font-semibold">Create</button>
         </div>
@@ -80,10 +74,12 @@
                     <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Code</th>
                     <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Event</th>
                     <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Date</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Time</th>
                     <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Budget</th>
-                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Budget Status</th>
                     <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Workflow</th>
-                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Open</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Pastor</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Usher</th>
+                    <th class="px-4 py-3 text-center text-xs uppercase tracking-wider text-mist-600">Actions</th>
                 </tr>
             </thead>
             <tbody id="events-body" class="divide-y divide-mist-100"></tbody>
@@ -225,19 +221,17 @@ async function loadGroups() {
     const res = await fetch(BASE_URL + '/api/v1/meta/groups');
     const payload = await res.json();
     const groups = payload.data || [];
-    const dropdowns = [document.getElementById('target-group'), document.getElementById('filter-group-list')];
-    dropdowns.forEach((select, i) => {
-        const label = i === 0 ? 'Organizer group' : 'All groups';
-        select.innerHTML = `<option value="">${label}</option>` + groups.map((g) => `<option value="${g.id}">${g.name}</option>`).join('');
-    });
+    const select = document.getElementById('filter-group-list');
+    if (select) {
+        select.innerHTML = '<option value="">All groups</option>' + groups.map((g) => `<option value="${g.id}">${g.name}</option>`).join('');
+    }
 }
 
 async function loadUsers() {
+    // Users list can be used for other purposes if needed
     const res = await fetch(BASE_URL + '/api/v1/meta/users');
     const payload = await res.json();
-    const users = payload.data || [];
-    const select = document.getElementById('organizer-user');
-    select.innerHTML = '<option value="">Organizer person</option>' + users.map((u) => `<option value="${u.id}">${u.full_name}</option>`).join('');
+    // Pastor and Usher fields are now manual text inputs
 }
 
 function buildBudgetActions(row) {
@@ -458,41 +452,47 @@ async function loadEvents() {
 
     empty.classList.add('hidden');
     body.innerHTML = rows.map((row) => {
-        const dt = new Date(row.start_datetime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        const startDate = new Date(row.start_datetime);
+        const date = startDate.toLocaleDateString([], { dateStyle: 'medium' });
+        const time = startDate.toLocaleTimeString([], { timeStyle: 'short' });
         const budget = Number(row.budget_total || 0);
+        const pastor = row.pastor_on_duty || '-';
+        const usher = row.usher_on_duty || '-';
         
-        // Build budget status badge
-        let budgetStatusBadge = '';
-        if (budget > 0) {
-            const statusMap = {
-                'draft': { emoji: '💭', label: 'Draft', color: 'bg-slate-100 text-slate-700' },
-                'pending_approval': { emoji: '⏳', label: 'Pending', color: 'bg-amber-100 text-amber-700' },
-                'approved': { emoji: '✅', label: 'Approved', color: 'bg-emerald-100 text-emerald-700' },
-                'rejected': { emoji: '❌', label: 'Rejected', color: 'bg-red-100 text-red-700' },
-                'in_progress': { emoji: '▶️', label: 'In Progress', color: 'bg-blue-100 text-blue-700' },
-                'completed': { emoji: '🏁', label: 'Completed', color: 'bg-purple-100 text-purple-700' }
-            };
-            const statusInfo = statusMap[row.budget_status || 'draft'] || statusMap['draft'];
-            budgetStatusBadge = `<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${statusInfo.color}">${statusInfo.emoji} ${statusInfo.label}</span>`;
-        } else {
-            budgetStatusBadge = '<span class="text-xs text-mist-500">—</span>';
-        }
+        // Build workflow badge
+        const statusMap = {
+            'draft': { emoji: '💭', label: 'Draft', color: 'bg-slate-100 text-slate-700' },
+            'planned': { emoji: '📋', label: 'Planned', color: 'bg-blue-100 text-blue-700' },
+            'ongoing': { emoji: '▶️', label: 'Ongoing', color: 'bg-amber-100 text-amber-700' },
+            'completed': { emoji: '✅', label: 'Completed', color: 'bg-emerald-100 text-emerald-700' },
+            'cancelled': { emoji: '❌', label: 'Cancelled', color: 'bg-red-100 text-red-700' }
+        };
+        const statusInfo = statusMap[row.status] || statusMap['draft'];
+        const workflowBadge = `<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${statusInfo.color}">${statusInfo.emoji} ${statusInfo.label}</span>`;
         
         return `
             <tr class="hover:bg-mist-50/70">
-                <td class="px-4 py-3 text-xs text-mist-600 font-mono">${row.event_code}</td>
+                <td class="px-4 py-3 text-xs text-mist-600 font-mono font-bold">${row.event_code}</td>
                 <td class="px-4 py-3">
                     <p class="font-semibold text-royal-800">${row.title}</p>
-                    ${isAppointmentRow(row.notes)
-                        ? `<p class="text-xs mt-0.5"><span class="inline-flex items-center gap-1 bg-rose-100 text-rose-700 rounded-full px-2 py-0.5 text-[10px] font-semibold">&#128197; Appointment</span>${extractApptWith(row.notes) ? `<span class="text-mist-500 ml-2">with ${extractApptWith(row.notes)}</span>` : ''}</p>`
-                        : `<p class="text-xs text-mist-500">${categoryLabel(row.category)}${row.target_group ? ` &bull; ${row.target_group}` : ''}</p>`}
+                    <p class="text-xs text-mist-500 mt-0.5">${row.event_type || 'Event'}</p>
                 </td>
-                <td class="px-4 py-3 text-mist-700">${dt}<div class="text-xs text-mist-500">${row.venue || '-'}</div></td>
-                <td class="px-4 py-3 text-mist-700">TZS ${formatMoney(budget)}${budget > 0 ? '<div class="text-xs text-emerald-600 font-semibold">Linked</div>' : ''}</td>
-                <td class="px-4 py-3">${budgetStatusBadge}</td>
-                <td class="px-4 py-3"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(row.status)}">${row.status}</span></td>
-                <td class="px-4 py-3">${buildBudgetActions(row)}</td>
-                <td class="px-4 py-3"><a class="text-royal-600 hover:text-royal-800 font-semibold text-xs" href="${BASE_URL}/events/${row.id}">Open</a></td>
+                <td class="px-4 py-3 text-sm text-mist-700">${date}</td>
+                <td class="px-4 py-3 text-sm text-mist-700">${time}</td>
+                <td class="px-4 py-3 text-sm text-mist-700">
+                    <div class="font-semibold">TZS ${formatMoney(budget)}</div>
+                    ${budget > 0 ? '<div class="text-xs text-emerald-600">Linked</div>' : '<div class="text-xs text-mist-400">None</div>'}
+                </td>
+                <td class="px-4 py-3">${workflowBadge}</td>
+                <td class="px-4 py-3 text-sm text-mist-700">${pastor}</td>
+                <td class="px-4 py-3 text-sm text-mist-700">${usher}</td>
+                <td class="px-4 py-3 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                        <a href="${BASE_URL}/events/${row.id}" class="px-2.5 py-1 rounded-lg bg-royal-50 hover:bg-royal-100 text-royal-700 text-xs font-semibold">View</a>
+                        <button data-edit-event="${row.id}" class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold">Edit</button>
+                        <button data-delete-event="${row.id}" class="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold">Delete</button>
+                    </div>
+                </td>
             </tr>
         `;
     }).join('');
@@ -501,6 +501,35 @@ async function loadEvents() {
 document.getElementById('apply-filters').addEventListener('click', loadEvents);
 document.getElementById('search-keyword').addEventListener('input', loadEvents);
 document.getElementById('events-body').addEventListener('click', async (e) => {
+    const deleteBtn = e.target.closest('[data-delete-event]');
+    if (deleteBtn) {
+        const eventId = Number(deleteBtn.getAttribute('data-delete-event'));
+        if (eventId && confirm('Delete this event? This action cannot be undone.')) {
+            try {
+                const res = await fetch(BASE_URL + `/api/v1/events/${eventId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    alert(data.message || 'Failed to delete event');
+                    return;
+                }
+                showToast('Event deleted', 'success');
+                await loadEvents();
+            } catch (err) {
+                alert('Error deleting event');
+            }
+        }
+        return;
+    }
+    
+    const editBtn = e.target.closest('[data-edit-event]');
+    if (editBtn) {
+        const eventId = Number(editBtn.getAttribute('data-edit-event'));
+        if (eventId) {
+            window.location.href = BASE_URL + `/events/${eventId}`;
+        }
+        return;
+    }
+    
     const sendBtn = e.target.closest('[data-send-budget]');
     if (sendBtn) {
         const eventId = Number(sendBtn.getAttribute('data-send-budget'));
@@ -516,45 +545,15 @@ document.getElementById('events-body').addEventListener('click', async (e) => {
     }
 });
 
-document.getElementById('event-type').addEventListener('change', (e) => {
-    const val = e.target.value;
-    const isAppt = val === 'appointment';
-    const duration = document.getElementById('duration-hours');
 
-    if (isAppt) {
-        duration.value = '1';
-    } else if (Number(duration.value) < 2) {
-        duration.value = '2';
-    }
-
-    document.getElementById('attendance-wrap').classList.toggle('hidden', isAppt);
-    document.getElementById('appt-with-wrap').classList.toggle('hidden', !isAppt);
-    document.getElementById('appt-banner').classList.toggle('hidden', !isAppt);
-
-    const titleInput = document.querySelector('[name="title"]');
-    titleInput.placeholder = isAppt ? 'Appointment title / subject' : 'Event / Appointment title';
-});
 
 document.getElementById('create-event-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const payload = Object.fromEntries(fd.entries());
-    const budget = Number(payload.budget || 0);
-    const notifyAccountant = document.getElementById('notify-accountant').checked;
 
     payload.send_email = fd.get('send_email') ? 1 : 0;
     payload.send_sms = fd.get('send_sms') ? 1 : 0;
-
-    const apptWith = (document.getElementById('appt-with')?.value || '').trim();
-    if (payload.event_type === 'appointment' && apptWith) {
-        payload.appointment_with = apptWith;
-    }
-
-    if (notifyAccountant && budget > 0) {
-        const note = '\n\n[Finance workflow] Budget entered and marked for accountant follow-up.';
-        payload.description = (payload.description || '') + note;
-        payload.send_email = 1;
-    }
 
     const res = await fetch(BASE_URL + '/api/v1/events', {
         method: 'POST',

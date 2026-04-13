@@ -82,7 +82,7 @@ try {
 function logDepartmentLogin($pdo, $departmentId, $success, $email = null) {
     try {
         $stmt = $pdo->prepare('
-            INSERT INTO audit_logs (actor_id, module, action, entity, entity_id, summary, ip_address, user_agent)
+            INSERT INTO audit_logs (actor_user_id, module_name, action_name, entity_type, entity_id, change_summary, ip_address, user_agent)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ');
 

@@ -26,12 +26,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validation
     if (empty($firstName) || empty($lastName)) {
         $error = 'First name and last name are required.';
+    } elseif (empty($phone)) {
+        $error = 'Phone number is required.';
+    } elseif (empty($gender)) {
+        $error = 'Gender is required.';
     } elseif (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Invalid email format.';
     } else {
         try {
             // Start transaction
             $pdo->beginTransaction();
+
+            // Validate required fields for schema
+            if (empty($phone)) {
+                throw new Exception('Phone number is required.');
+            }
+            if (empty($gender)) {
+                throw new Exception('Gender is required.');
+            }
 
             // Insert member
             $stmt = $pdo->prepare('
@@ -43,8 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     email,
                     gender,
                     date_of_birth,
-                    address,
-                    status,
+                    physical_address,
+                    member_status,
                     join_date
                 ) VALUES (
                     ?,
@@ -67,9 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $memberCode,
                 $firstName,
                 $lastName,
-                $phone ?: null,
+                $phone,
                 $email ?: null,
-                $gender ?: null,
+                $gender,
                 $dateOfBirth ?: null,
                 $address ?: null
             ]);
@@ -149,11 +161,12 @@ $pageTitle = 'Add New Member';
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="phone">Phone Number</label>
+                            <label for="phone">Phone Number <span class="required">*</span></label>
                             <input 
                                 type="tel" 
                                 id="phone" 
                                 name="phone" 
+                                required
                                 placeholder="+255 700 000000"
                                 value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
                             >
@@ -172,12 +185,12 @@ $pageTitle = 'Add New Member';
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="gender">Gender</label>
-                            <select id="gender" name="gender">
+                            <label for="gender">Gender <span class="required">*</span></label>
+                            <select id="gender" name="gender" required>
                                 <option value="">Select...</option>
-                                <option value="Male" <?php echo ($_POST['gender'] ?? '') === 'Male' ? 'selected' : ''; ?>>Male</option>
-                                <option value="Female" <?php echo ($_POST['gender'] ?? '') === 'Female' ? 'selected' : ''; ?>>Female</option>
-                                <option value="Other" <?php echo ($_POST['gender'] ?? '') === 'Other' ? 'selected' : ''; ?>>Other</option>
+                                <option value="male" <?php echo ($_POST['gender'] ?? '') === 'male' ? 'selected' : ''; ?>>Male</option>
+                                <option value="female" <?php echo ($_POST['gender'] ?? '') === 'female' ? 'selected' : ''; ?>>Female</option>
+                                <option value="other" <?php echo ($_POST['gender'] ?? '') === 'other' ? 'selected' : ''; ?>>Other</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -238,7 +251,7 @@ function generateMemberCode($pdo) {
 function logDepartmentAction($pdo, $departmentId, $action, $entityId, $summary) {
     try {
         $stmt = $pdo->prepare('
-            INSERT INTO audit_logs (actor_id, module, action, entity, entity_id, summary, ip_address, user_agent)
+            INSERT INTO audit_logs (actor_user_id, module_name, action_name, entity_type, entity_id, change_summary, ip_address, user_agent)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
